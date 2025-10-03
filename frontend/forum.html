@@ -10,22 +10,28 @@
 </head>
 <body>
 <div id="navbar-container"></div>
-<div class="container">
-    <div class="forum-layout">
-        <div class="threads-list-panel">
-            <h2>Vlákna</h2>
-            <div id="threads-list"></div>
+<div class="forum-container">
+    <div class="threads-list-panel content-box">
+            <div class="threads-section open-threads">
+                <h2 class="section-header" data-target="open-threads-content"><span class="collapser-icon"></span>Otevřená vlákna</h2>
+                <div id="open-threads-content" class="threads-content">
+                    <!-- Open threads will be rendered here -->
+                </div>
+            </div>
+            <div class="threads-section closed-threads collapsed">
+                <h2 class="section-header" data-target="closed-threads-content"><span class="collapser-icon"></span>Uzavřená vlákna</h2>
+                <div id="closed-threads-content" class="threads-content"></div>
+            </div>
             <hr>
             <h3>Vytvořit nové vlákno</h3>
             <form id="threadForm" class="form">
                 <input id="title" type="text" placeholder="Název vlákna" required>
                 <button type="submit" class="btn">Vytvořit</button>
             </form>
-        </div>
-        <div class="thread-content-panel" id="thread-content-panel">
-            <!-- Obsah vybraného vlákna se načte sem -->
-            <p class="placeholder">Vyberte vlákno ze seznamu vlevo.</p>
-        </div>
+    </div>
+    <div class="thread-content-panel content-box" id="thread-content-panel">
+        <!-- Obsah vybraného vlákna se načte sem -->
+        <p class="placeholder">Vyberte vlákno ze seznamu vlevo.</p>
     </div>
 </div>
 </body>

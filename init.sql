@@ -7,7 +7,7 @@ id INT AUTO_INCREMENT PRIMARY KEY,
 full_name VARCHAR(50),
 username VARCHAR(50) UNIQUE NOT NULL,
 password_hash VARCHAR(255) NOT NULL,
-is_admin BOOLEAN DEFAULT FALSE,
+role VARCHAR(20) NOT NULL DEFAULT 'user', -- 'user', 'politician', 'admin'
 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -16,6 +16,8 @@ id INT AUTO_INCREMENT PRIMARY KEY,
 title VARCHAR(255) NOT NULL,
 user_id INT NOT NULL,
 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+is_closed BOOLEAN NOT NULL DEFAULT FALSE,
+is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
@@ -24,7 +26,14 @@ id INT AUTO_INCREMENT PRIMARY KEY,
 thread_id INT NOT NULL,
 user_id INT NOT NULL,
 content TEXT NOT NULL,
+parent_post_id INT NULL DEFAULT NULL,
+is_anonymous BOOLEAN NOT NULL DEFAULT FALSE,
+is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 FOREIGN KEY (thread_id) REFERENCES threads(id) ON DELETE CASCADE,
-FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+FOREIGN KEY (parent_post_id) REFERENCES posts(id) ON DELETE SET NULL
 );
+
+-- Vytvoření defaultního admina: admin/admin
+INSERT INTO users (full_name, username, password_hash, role) VALUES ('Admin User', 'admin', 'scrypt:32768:8:1$VVvJHyXJa7gPnxjF$2ccc405caf0c24efbc94cc76426771f2bb6e45a97e93504bd3257a127e32be2fc8089ea8c434f86e1c713ae14f0a66beb9db2e38585ed55a7875ddbcf99a5674', 'admin');

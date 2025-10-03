@@ -15,6 +15,7 @@ function renderNavbar() {
     const token = localStorage.getItem("token");
     const username = localStorage.getItem("username");
     const fullName = localStorage.getItem("full_name");
+    const role = localStorage.getItem("role");
 
     if (!token) {
         // odhlášený
@@ -24,12 +25,14 @@ function renderNavbar() {
     `;
     } else {
         // přihlášený
+        const adminLink = role === 'admin' ? '<a href="admin.html">Správa uživatelů</a>' : '';
         nav.innerHTML = `
       <div class="user-info">
         <span class="user-fullname">${fullName || username || "Uživatel"}</span>
         <span class="user-username">@${username || "uživatel"}</span>
       </div>
       <div class="nav-actions">
+        ${adminLink}
         <a href="change_password.html">Změna hesla</a>
         <a href="#" onclick="logout()">Odhlásit</a>
       </div>
@@ -39,8 +42,10 @@ function renderNavbar() {
 
 function logout() {
     localStorage.removeItem("token");
+    localStorage.removeItem("user_id");
     localStorage.removeItem("username");
     localStorage.removeItem("full_name");
+    localStorage.removeItem("role");
     window.location.href = "index.html";
 }
 

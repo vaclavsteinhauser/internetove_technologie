@@ -17,8 +17,8 @@ async function apiRequest(endpoint, method = "GET", data = null, auth = true) {
         let errorMessage = `API chyba: ${res.status}`;
         try {
             const errorData = await res.json();
-            if (errorData && errorData.message) {
-                errorMessage = errorData.message;
+            if (errorData && (errorData.message || errorData.error)) {
+                errorMessage = errorData.message || errorData.error;
             }
         } catch (jsonError) {
             console.error("Failed to parse error response as JSON:", jsonError);
