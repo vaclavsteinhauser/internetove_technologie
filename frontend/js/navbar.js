@@ -29,8 +29,10 @@ function renderNavbar() {
         <span class="user-fullname">${fullName || username || "Uživatel"}</span>
         <span class="user-username">@${username || "uživatel"}</span>
       </div>
-      <a href="change_password.html">Změna hesla</a>
-      <a href="#" onclick="logout()">Odhlásit</a>
+      <div class="nav-actions">
+        <a href="change_password.html">Změna hesla</a>
+        <a href="#" onclick="logout()">Odhlásit</a>
+      </div>
     `;
     }
 }
