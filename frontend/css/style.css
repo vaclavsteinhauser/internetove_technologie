@@ -1,0 +1,183 @@
+body {
+    font-family: Arial, sans-serif;
+    background: #f5f5f5;
+    color: #333;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+}
+
+#navbar-container {
+    width: 100%;
+    position: sticky;
+    top: 0;
+}
+
+.container {
+    background: white;
+    margin-top: 50px;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    text-align: center;
+    width: 90%;
+    max-width: 1200px; /* Zvětšíme kontejner pro dva sloupce */
+}
+
+h1 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.form input {
+    width: 90%;
+    padding: 10px;
+    margin: 8px 0;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+}
+
+.btn {
+    display: inline-block;
+    padding: 10px 20px;
+    margin: 10px 5px;
+    background: #2563eb;
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    cursor: pointer;
+    border: none;
+    transition: background 0.2s;
+}
+
+.btn:hover {
+    background: #1d4ed8;
+}
+
+.links {
+    margin-top: 20px;
+}
+
+p {
+    margin-top: 15px;
+    color: #555;
+}
+
+.thread, .post {
+    background: #f9fafb;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    text-align: left;
+}
+.thread {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.thread:hover, .thread.active {
+    background: #eef2ff;
+}
+
+textarea {
+    width: 90%;
+    height: 80px;
+    padding: 10px;
+    margin: 8px 0;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    resize: vertical;
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #222;
+    color: #fff;
+    padding: 10px 20px;
+}
+
+.navbar .brand {
+    color: #fff;
+    font-weight: bold;
+    text-decoration: none;
+    font-size: 18px;
+}
+
+.navbar .nav-right a,
+.navbar .nav-right span {
+    margin-left: 15px;
+    color: #ddd;
+    text-decoration: none;
+    font-size: 14px;
+}
+.navbar .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 25px; /* Mezera mezi info o uživateli a tlačítky */
+}
+
+
+.navbar .nav-right a:hover {
+    color: #fff;
+}
+
+.navbar .user-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    line-height: 1.2;
+}
+
+.navbar .user-fullname {
+    font-weight: bold;
+    font-size: 15px;
+    color: #fff;
+}
+
+.navbar .user-username {
+    font-size: 12px;
+    color: #aaa;
+}
+
+.navbar .nav-actions {
+    display: flex;
+    gap: 15px; /* Mezera mezi tlačítky "Změna hesla" a "Odhlásit" */
+}
+
+/* Styly pro dvou-sloupcový layout fóra */
+.forum-layout {
+    display: flex;
+    gap: 20px;
+    width: 100%;
+    text-align: left;
+}
+
+.threads-list-panel {
+    flex: 1;
+    min-width: 300px;
+    max-width: 400px;
+}
+
+.thread-content-panel {
+    flex: 2;
+    border-left: 1px solid #ddd;
+    padding-left: 20px;
+}
+
+.thread-content-panel .placeholder {
+    color: #888;
+    text-align: center;
+    margin-top: 50px;
+    font-style: italic;
+}
+
+.post-date {
+    font-size: 0.8em;
+    color: #666;
+}

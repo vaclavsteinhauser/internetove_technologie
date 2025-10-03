@@ -1,0 +1,46 @@
+version: "3.9"
+
+services:
+  db:                                 #DB
+    image: mariadb:11
+    container_name: forum-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ZQ2p4HcSm4YgDe3b
+      MYSQL_DATABASE: forum
+      MYSQL_USER: forumuser
+      MYSQL_PASSWORD: ZJNiogxCsNs9flEH
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/schema.sql
+
+  backend:                            #API
+    build: ./backend
+    container_name: forum-backend
+    restart: always
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db
+      DB_USER: forumuser
+      DB_PASSWORD: ZJNiogxCsNs9flEH
+      DB_NAME: forum
+      SECRET_KEY: c6hnErwqQ7VZuenS
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend:/app
+
+  frontend:                             #web
+    image: nginx:alpine
+    container_name: forum-frontend
+    restart: always
+    ports:
+      - "8000:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+
+volumes:
+  db_data:

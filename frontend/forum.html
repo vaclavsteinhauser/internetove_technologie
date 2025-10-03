@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <title>Fórum</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/api.js"></script>
+    <script src="js/forum.js" defer></script>
+    <script src="js/navbar.js"></script>
+</head>
+<body>
+<div id="navbar-container"></div>
+<div class="container">
+    <div class="forum-layout">
+        <div class="threads-list-panel">
+            <h2>Vlákna</h2>
+            <div id="threads-list"></div>
+            <hr>
+            <h3>Vytvořit nové vlákno</h3>
+            <form id="threadForm" class="form">
+                <input id="title" type="text" placeholder="Název vlákna" required>
+                <button type="submit" class="btn">Vytvořit</button>
+            </form>
+        </div>
+        <div class="thread-content-panel" id="thread-content-panel">
+            <!-- Obsah vybraného vlákna se načte sem -->
+            <p class="placeholder">Vyberte vlákno ze seznamu vlevo.</p>
+        </div>
+    </div>
+</div>
+</body>
+</html>
