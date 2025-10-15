@@ -3,3 +3,4 @@ flask-mysqldb
 pyjwt
 werkzeug
 Flask-Cors
+Flask-Mail

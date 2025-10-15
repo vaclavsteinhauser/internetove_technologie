@@ -1,46 +1,80 @@
+# Verze syntaxe souboru docker-compose.
 version: "3.9"
 
+# Definice jednotlivých služeb (kontejnerů), které tvoří aplikaci.
 services:
-  db:                                 #DB
+  # Služba pro databázi
+  db:
+    # Použije se oficiální image MariaDB verze 11.
     image: mariadb:11
+    # Název kontejneru pro snadnější identifikaci.
     container_name: forum-db
+    # Kontejner se automaticky restartuje, pokud spadne.
     restart: always
+    # Proměnné prostředí pro konfiguraci databáze uvnitř kontejneru.
     environment:
-      MYSQL_ROOT_PASSWORD: ZQ2p4HcSm4YgDe3b
-      MYSQL_DATABASE: forum
-      MYSQL_USER: forumuser
-      MYSQL_PASSWORD: ZJNiogxCsNs9flEH
+      MYSQL_ROOT_PASSWORD: ZQ2p4HcSm4YgDe3b # Heslo pro root uživatele databáze.
+      MYSQL_DATABASE: forum                 # Název databáze, která se má vytvořit při startu.
+      MYSQL_USER: forumuser                 # Jméno uživatele pro aplikaci.
+      MYSQL_PASSWORD: ZJNiogxCsNs9flEH      # Heslo pro uživatele aplikace.
+    # Mapování portů: Port 3306 na hostitelském stroji se mapuje na port 3306 v kontejneru.
+    # Umožňuje připojení k databázi zvenčí kontejneru (např. z databázového klienta).
     ports:
       - "3306:3306"
+    # Mapování svazků (volumes) pro perzistenci dat.
     volumes:
-      - db_data:/var/lib/mysql
-      - ./init.sql:/docker-entrypoint-initdb.d/schema.sql
+      # 'db_data' je pojmenovaný volume spravovaný Dockerem. Zajišťuje, že data databáze
+      # zůstanou zachována i po smazání a znovuvytvoření kontejneru.
+      - db_data:/var/lib/mysql 
+      # Mapuje lokální soubor `init.sql` do speciálního adresáře v kontejneru.
+      # Skripty v tomto adresáři se automaticky spustí při prvním startu databáze.
+      - ./init.sql:/docker-entrypoint-initdb.d/schema.sql 
 
-  backend:                            #API
+  # Služba pro backendovou API aplikaci (Flask)
+  backend:
+    # Sestaví image z Dockerfile, který se nachází v adresáři `./backend`.
     build: ./backend
     container_name: forum-backend
     restart: always
+    # Definuje závislost na službě 'db'. Docker-compose zajistí, že 'db' kontejner
+    # se spustí před 'backend' kontejnerem.
     depends_on:
       - db
+    # Proměnné prostředí pro konfiguraci backendové aplikace.
     environment:
-      DB_HOST: db
-      DB_USER: forumuser
-      DB_PASSWORD: ZJNiogxCsNs9flEH
-      DB_NAME: forum
-      SECRET_KEY: c6hnErwqQ7VZuenS
+      DB_HOST: db # Jako hostitel databáze se použije název služby 'db'. Docker zajistí překlad na správnou IP adresu.
+      DB_USER: forumuser # Stejné hodnoty jako v 'db' službě.
+      DB_PASSWORD: ZJNiogxCsNs9flEH 
+      DB_NAME: forum 
+      SECRET_KEY: c6hnErwqQ7VZuenS # Tajný klíč pro JWT.
+    # Mapuje port 5000 na hostiteli na port 5000 v kontejneru, kde běží Flask aplikace.
     ports:
       - "5000:5000"
+    # Mapuje lokální adresář `./backend` do adresáře `/app` v kontejneru.
+    # To umožňuje "live reload" - změny v kódu na hostitelském stroji se okamžitě projeví v kontejneru.
     volumes:
       - ./backend:/app
 
-  frontend:                             #web
+  # Služba pro frontend (statické HTML/CSS/JS soubory)
+  frontend:
+    # Použije se lehký webový server Nginx.
     image: nginx:alpine
     container_name: forum-frontend
     restart: always
+    # Mapuje port 8000 na hostiteli na standardní HTTP port 80 v Nginx kontejneru.
     ports:
       - "8000:80"
+    # Mapuje lokální adresář `./frontend` do kořenového adresáře Nginx serveru.
+    # Příznak ':ro' (read-only) znamená, že kontejner nemůže měnit tyto soubory.
     volumes:
       - ./frontend:/usr/share/nginx/html:ro
-
+  # Služba pro testování odesílání e-mailů
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - "1025:1025" # SMTP port
+      - "8025:8025" # Web UI port
+    restart: unless-stopped
+# Definice pojmenovaného volume pro perzistentní uložení databáze.
 volumes:
   db_data:

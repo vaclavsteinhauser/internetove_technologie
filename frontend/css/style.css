@@ -41,7 +41,6 @@ body {
 }
 
 h1, .content-box h3 {
-    margin-bottom: 20px;
     color: #333;
 }
 
@@ -56,46 +55,68 @@ h1, .content-box h3 {
 .btn {
     display: inline-block;
     padding: 10px 20px;
-    margin: 10px 5px;
+    margin: 8px 4px;
     background: #2563eb;
     color: white;
     text-decoration: none;
-    border-radius: 6px;
+    border-radius: 8px; /* Větší zaoblení */
     cursor: pointer;
     border: none;
-    transition: background 0.2s;
+    transition: all 0.2s ease-in-out; /* Plynulejší přechod */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Jemný stín */
+    font-weight: 600;
 }
 
 .btn:hover {
     background: #1d4ed8;
+    transform: translateY(-1px); /* Lehký posun nahoru při najetí */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
 .btn-small {
     padding: 5px 10px;
-    font-size: 12px;
-    background-color: #6b7280;
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border-radius: 16px; /* "Pill" tvar */
+    font-weight: 500;
+    box-shadow: none;
+    border: 1px solid transparent;
 }
 
 .btn-small:hover {
     background-color: #4b5563;
 }
 
+.btn-small svg {
+    width: 14px;
+    height: 14px;
+}
+
 .btn-danger {
     background-color: #dc2626;
+    color: white;
 }
 
 .btn-danger:hover {
     background-color: #b91c1c;
+    color: white;
+    transform: translateY(0);
+    box-shadow: none;
 }
 
-.btn-reply {
+.btn-secondary {
     background-color: #e5e7eb;
     color: #374151;
+    border-color: #d1d5db;
 }
 
 .btn-reply:hover {
     background-color: #d1d5db;
     color: #1f2937;
+    transform: translateY(0);
+    box-shadow: none;
 }
 
 .links {
@@ -118,7 +139,7 @@ p {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 5px 10px;
+    padding: 5px 0 5px 10px; /* Zmenšíme padding vpravo, protože ho má teď wrapper */
     background: #f9fafb;
     gap: 10px;
     cursor: pointer;
@@ -131,6 +152,7 @@ p {
     margin: 0;
     flex-grow: 1;
     font-size: 1em;
+    word-break: break-word; /* Pro případ delšího názvu s (uzavřeno) */
 }
 .thread-details {
     display: none;
@@ -251,18 +273,13 @@ textarea {
     display: flex;
     flex-direction: column;    
     transition: flex 0.3s ease-in-out;
-    min-height: 42px; /* Výška pro sbalený header */
-}
-.threads-section.open-threads { flex: 1 1 auto; }
-.threads-section.closed-threads { flex: 0 1 auto; }
-.threads-section.collapsed {
-    flex-grow: 0;
-    flex-shrink: 0;
-    flex-basis: auto;
+    min-height: 42px; /* Minimální výška pro sbalený header */
 }
 
 .section-header {
     background-color: #f0f0f0;
+    /* Použijeme flexbox pro zarovnání ikony a textu */
+    display: flex;
     padding: 10px;
     margin: 0;
     cursor: pointer;
@@ -272,12 +289,14 @@ textarea {
     border-radius: 8px 8px 0 0;
 }
 
+/* Kontejner pro samotný seznam vláken, který bude mít posuvník */
 .threads-content {
     overflow-y: auto;
     padding: 10px;
-    min-height: 0;
+    min-height: 0; /* Důležité pro správné fungování flexboxu a overflow */
 }
 
+/* Když je sekce sbalená, její obsah se skryje */
 .threads-section.collapsed .threads-content {
     display: none;
 }
@@ -292,6 +311,7 @@ textarea {
     overflow: hidden; /* Zabrání posouvání celého panelu */
 }
 
+/* Zástupný text, pokud není vybráno žádné vlákno */
 .thread-content-panel .placeholder {
     color: #888;
     height: 100%;
@@ -300,11 +320,12 @@ textarea {
     font-style: italic;
 }
 
+/* Kontejner pro všechny příspěvky ve vlákně */
 #posts {
-    overflow-y: auto; /* Posuvník pouze pro tento kontejner */
-    min-height: 0;
-    display: grid;
-    grid-template-rows: auto 1fr;
+    overflow-y: auto; /* Posuvník se zobrazí, pokud je příspěvků více */
+    min-height: 0; /* Klíčové pro správné fungování posuvníku v grid layoutu */
+    display: flex;
+    flex-direction: column;
     gap: 10px;
 }
 
@@ -332,6 +353,13 @@ textarea {
 .thread-actions {
     display: flex;
     gap: 10px;
+}
+
+/* Obal pro ikonu, který zvětšuje klikatelnou plochu */
+.collapser-wrapper {
+    padding: 8px; /* Toto vytváří větší klikatelnou zónu kolem ikony */
+    display: flex;
+    align-items: center;
 }
 
 .post.deleted .post-content, .post.deleted .post-author {
@@ -432,6 +460,30 @@ textarea {
     color: #666;
 }
 
+.filters-container {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.filters-container input {
+    width: 200px;
+}
+
+#pagination-controls {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+
 .form-options {
     text-align: left;
     margin: 10px 0;
@@ -439,10 +491,5 @@ textarea {
 }
 
 .post-form-container {
-    max-height: 90%;
-}
-
-.other-posts-container {
-    overflow-y: auto;
-    min-height: 0;
+    /* Tento kontejner je součástí gridu a jeho výška je řízena grid-template-rows */
 }
