@@ -27,14 +27,14 @@ body {
     width: 90%;
     flex-grow: 1; /* Kontejner se roztáhne na zbývající výšku */
     max-width: 1200px; /* Zvětšíme kontejner pro dva sloupce */
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 /* Nový box model pro panely */
 .content-box {
     background: white;
     border-radius: 12px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     padding: 20px;
     display: flex;
     flex-direction: column;
@@ -61,49 +61,26 @@ h1, .content-box h3 {
     text-decoration: none;
     border-radius: 8px; /* Větší zaoblení */
     cursor: pointer;
-    border: none;
+    border: 1px solid transparent;
     transition: all 0.2s ease-in-out; /* Plynulejší přechod */
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Jemný stín */
     font-weight: 600;
 }
 
 .btn:hover {
     background: #1d4ed8;
-    transform: translateY(-1px); /* Lehký posun nahoru při najetí */
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
 .btn-small {
     padding: 5px 10px;
     font-size: 13px;
-    display: inline-flex;
-    align-items: center;
     gap: 5px;
     border-radius: 16px; /* "Pill" tvar */
     font-weight: 500;
-    box-shadow: none;
-    border: 1px solid transparent;
-}
-
-.btn-small:hover {
-    background-color: #4b5563;
 }
 
 .btn-small svg {
     width: 14px;
     height: 14px;
-}
-
-.btn-danger {
-    background-color: #dc2626;
-    color: white;
-}
-
-.btn-danger:hover {
-    background-color: #b91c1c;
-    color: white;
-    transform: translateY(0);
-    box-shadow: none;
 }
 
 .btn-secondary {
@@ -112,11 +89,24 @@ h1, .content-box h3 {
     border-color: #d1d5db;
 }
 
-.btn-reply:hover {
+.btn-secondary:hover {
     background-color: #d1d5db;
     color: #1f2937;
-    transform: translateY(0);
-    box-shadow: none;
+}
+
+.btn-danger {
+    background-color: #dc2626;
+    color: white;
+    border-color: #dc2626;
+}
+
+.btn-danger:hover {
+    background-color: #b91c1c;
+    border-color: #b91c1c;
+}
+
+.btn-reply {
+    /* Alias pro btn-secondary, pokud bychom chtěli specifické styly */
 }
 
 .links {
@@ -151,11 +141,6 @@ p {
 .thread-title {
     margin: 0;
     flex-grow: 1;
-    font-size: 1em;
-    word-break: break-word; /* Pro případ delšího názvu s (uzavřeno) */
-}
-.thread-details {
-    display: none;
     padding: 10px;
     font-size: 0.9em;
 }
@@ -355,13 +340,6 @@ textarea {
     gap: 10px;
 }
 
-/* Obal pro ikonu, který zvětšuje klikatelnou plochu */
-.collapser-wrapper {
-    padding: 8px; /* Toto vytváří větší klikatelnou zónu kolem ikony */
-    display: flex;
-    align-items: center;
-}
-
 .post.deleted .post-content, .post.deleted .post-author {
     color: #999;
     font-style: italic;
@@ -409,6 +387,11 @@ textarea {
 
 .post-author {
     margin: 0;
+}
+
+.post-author .author-anonymous-admin {
+    font-style: italic;
+    color: #6b7280; /* Šedá barva */
 }
 
 .post-content {

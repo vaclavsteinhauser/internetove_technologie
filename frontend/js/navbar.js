@@ -62,14 +62,26 @@ function renderNavbar() {
 function logout() {
     const refreshToken = localStorage.getItem("refreshToken");
     if (refreshToken) {
-        // Pokusíme se odhlásit i na serveru
-        apiRequest("/auth/logout", "POST", { refreshToken }).catch(err => {
-            console.error("Server-side logout failed, proceeding with client-side logout.", err);
+        // Pokusíme se odhlásit i na serveru. `finally` blok zajistí, že se lokální odhlášení provede vždy.
+        apiRequest("/auth/logout", "POST", { refreshToken })
+            .catch(err => {
+                console.error("Server-side logout failed, proceeding with client-side logout.", err);
+            })
+            .finally(() => {
+                clearLocalDataAndRedirect();
         });
     }
     // Smažeme všechna data z localStorage a přesměrujeme
     localStorage.clear();
     window.location.href = "index.html"; 
+}
+
+/**
+ * Vymaže lokální úložiště a přesměruje na úvodní stránku.
+ */
+function clearLocalDataAndRedirect() {
+    localStorage.clear();
+    window.location.href = "index.html";
 }
 
 // Po načtení DOM se automaticky spustí načítání navigační lišty.

@@ -2,17 +2,15 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fórum</title>
     <link rel="stylesheet" href="css/style.css">
-    <script src="js/api.js"></script>
-    <script src="js/forum.js" defer></script>
-    <script src="js/navbar.js"></script>
 </head>
 <body>
 <div id="navbar-container"></div>
 <div class="forum-container">
     <div class="threads-list-panel content-box">
-            <div id="my-threads-section" class="threads-section">
+            <div id="my-threads-section" class="threads-section collapsed">
                 <h3 class="section-header">
                     <span class="collapser-icon"></span>
                     Moje vlákna
@@ -20,13 +18,13 @@
                 <div id="my-threads-content" class="threads-content"></div>
             </div>
             <div class="threads-section open-threads">
-                <h2 class="section-header" data-target="open-threads-content"><span class="collapser-icon"></span>Otevřená vlákna</h2>
+                <h3 class="section-header" data-target="open-threads-content"><span class="collapser-icon"></span>Otevřená vlákna</h3>
                 <div id="open-threads-content" class="threads-content">
                     <!-- Open threads will be rendered here -->
                 </div>
             </div>
             <div class="threads-section closed-threads collapsed">
-                <h2 class="section-header" data-target="closed-threads-content"><span class="collapser-icon"></span>Uzavřená vlákna</h2>
+                <h3 class="section-header" data-target="closed-threads-content"><span class="collapser-icon"></span>Uzavřená vlákna</h3>
                 <div id="closed-threads-content" class="threads-content"></div>
             </div>
             <hr>
@@ -41,5 +39,8 @@
         <p class="placeholder">Vyberte vlákno ze seznamu vlevo.</p>
     </div>
 </div>
+<script src="js/api.js"></script>
+<script src="js/navbar.js"></script>
+<script src="js/forum.js" defer></script>
 </body>
 </html>

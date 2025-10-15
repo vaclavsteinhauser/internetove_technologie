@@ -256,10 +256,36 @@ def logout():
     # V reálné aplikaci by se hledal hash.
     return jsonify({"message": "Successfully logged out"})
 
-# --- POMOCNÉ FUNKCE (HELPERS) ---
+# --- DEKORÁTORY A POMOCNÉ FUNKCE ---
 
-def get_user_from_token():
-    """Dekóduje JWT token z hlavičky 'Authorization' a vrací informace o uživateli."""
+from functools import wraps
+
+def token_required(f):
+    """
+    Dekorátor pro ochranu endpointů. Ověřuje platnost JWT tokenu z hlavičky 'Authorization'.
+    Pokud je token platný, předá informace o uživateli (slovník) jako první argument do volané funkce.
+    """
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+        if "Authorization" in request.headers:
+            # Token je obvykle ve formátu "Bearer <token>"
+            token = request.headers["Authorization"].split(" ")[1]
+        
+        if not token:
+            return jsonify({"error": "Unauthorized", "message": "Token is missing"}), 401
+        
+        try:
+            data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
+            user_info = {"id": data["user_id"], "role": data.get("role", "user")}
+        except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
+            return jsonify({"error": "Unauthorized", "message": "Token is invalid or expired"}), 401
+
+        return f(user_info, *args, **kwargs)
+    return decorated
+
+def get_user_from_token(): # Ponecháno pro případy, kdy je uživatel volitelný (např. zobrazení vlákna)
+    """Dekóduje JWT token z hlavičky 'Authorization' a vrací informace o uživateli, pokud existuje."""
     token = request.headers.get("Authorization")
     if not token:
         return None
@@ -276,12 +302,9 @@ def get_user_from_token():
 # --- USER MANAGEMENT ENDPOINTS ---
 
 @app.route("/api/users/change_password", methods=["PUT"])
-def change_password():
-    # Získání identity uživatele z tokenu. Toto chrání endpoint před neautorizovaným přístupem.
-    user = get_user_from_token()
-    if not user:
-        return jsonify({"error": "Unauthorized"}), 401
-
+@token_required
+def change_password(user):
+    # Informace o uživateli jsou nyní předány dekorátorem jako argument `user`.
     data = request.json
     old_pw, new_pw = data.get("old_password"), data.get("new_password")
     if not old_pw or not new_pw:
@@ -320,12 +343,9 @@ def list_threads():
 
 
 @app.route("/api/threads", methods=["POST"])
-def create_thread():
-    # Endpoint pro vytvoření vlákna je chráněný, uživatel musí být přihlášen.
-    user = get_user_from_token()
-    if not user:
-        return jsonify({"error": "Unauthorized"}), 401
-
+@token_required
+def create_thread(user):
+    # Uživatel musí být přihlášen, což zajišťuje dekorátor.
     data = request.json
     title = data.get("title")
     cur = mysql.connection.cursor()
@@ -399,11 +419,8 @@ def get_thread(thread_id):
 
 
 @app.route("/api/threads/<int:thread_id>", methods=["PUT"])
-def update_thread(thread_id):
-    user = get_user_from_token()
-    if not user:
-        return jsonify({"error": "Unauthorized"}), 401
-
+@token_required
+def update_thread(user, thread_id):
     data = request.json
     title = data.get("title")
 
@@ -424,11 +441,8 @@ def update_thread(thread_id):
 
 
 @app.route("/api/threads/<int:thread_id>", methods=["DELETE"])
-def delete_thread(thread_id):
-    user = get_user_from_token()
-    if not user:
-        return jsonify({"error": "Unauthorized"}), 401
-
+@token_required
+def delete_thread(user, thread_id):
     cur = mysql.connection.cursor()
     cur.execute("SELECT user_id FROM threads WHERE id=%s", (thread_id,))
     thread = cur.fetchone()
@@ -449,12 +463,9 @@ def delete_thread(thread_id):
     return jsonify({"message": "Thread deleted successfully"})
 
 @app.route("/api/threads/<int:thread_id>/close", methods=["PUT"])
-def close_thread(thread_id):
-    # Endpoint pro uzavření/otevření vlákna.
-    user = get_user_from_token()
-    if not user:
-        return jsonify({"error": "Unauthorized"}), 401
-
+@token_required
+def close_thread(user, thread_id):
+    # Endpoint pro uzavření/otevření vlákna, chráněný dekorátorem.
     cur = mysql.connection.cursor()
     cur.execute("SELECT user_id, is_closed FROM threads WHERE id=%s", (thread_id,))
     thread = cur.fetchone()
@@ -474,11 +485,8 @@ def close_thread(thread_id):
 # --- POSTS ENDPOINTS ---
 
 @app.route("/api/threads/<int:thread_id>/posts", methods=["POST"])
-def add_post(thread_id):
-    user = get_user_from_token()
-    if not user:
-        return jsonify({"error": "Unauthorized"}), 401
-
+@token_required
+def add_post(user, thread_id):
     cur = mysql.connection.cursor()
     # Kontrola, zda vlákno, do kterého se přispívá, není uzavřené.
     cur.execute("SELECT is_closed FROM threads WHERE id=%s", (thread_id,))
@@ -499,11 +507,8 @@ def add_post(thread_id):
 
 
 @app.route("/api/posts/<int:post_id>", methods=["PUT"])
-def update_post(post_id):
-    user = get_user_from_token()
-    if not user:
-        return jsonify({"error": "Unauthorized"}), 401
-
+@token_required
+def update_post(user, post_id):
     data = request.json
     content = data.get("content")
 
@@ -524,11 +529,8 @@ def update_post(post_id):
 
 
 @app.route("/api/posts/<int:post_id>", methods=["DELETE"])
-def delete_post(post_id):
-    user = get_user_from_token()
-    if not user:
-        return jsonify({"error": "Unauthorized"}), 401
-
+@token_required
+def delete_post(user, post_id):
     cur = mysql.connection.cursor()
     cur.execute("SELECT user_id FROM posts WHERE id=%s", (post_id,))
     post = cur.fetchone()
@@ -559,8 +561,8 @@ def delete_post(post_id):
 # --- ADMIN-ONLY ENDPOINTS ---
 
 @app.route("/api/admin/users", methods=["GET"])
-def admin_get_users():
-    user = get_user_from_token()
+@token_required
+def admin_get_users(user):
     if not user or user["role"] != 'admin':
         return jsonify({"error": "Forbidden"}), 403
 
@@ -571,8 +573,8 @@ def admin_get_users():
 
 
 @app.route("/api/admin/users/<int:user_id>/role", methods=["PUT"])
-def admin_change_user_role(user_id):
-    user = get_user_from_token()
+@token_required
+def admin_change_user_role(user, user_id):
     # Tento endpoint je přístupný pouze pro administrátory.
     if not user or user["role"] != 'admin':
         return jsonify({"error": "Forbidden"}), 403
@@ -590,12 +592,12 @@ def admin_change_user_role(user_id):
     return jsonify({"message": "User role updated"})
 
 @app.route("/api/admin/audit-log", methods=["GET"])
-def admin_get_audit_log():
+@token_required
+def admin_get_audit_log(user):
     """
     Endpoint pro získání auditních záznamů s podporou filtrování a stránkování.
     Přístupný pouze pro administrátory.
     """
-    user = get_user_from_token()
     if not user or user["role"] != 'admin':
         return jsonify({"error": "Forbidden"}), 403
 
@@ -647,7 +649,7 @@ def log_request(response):
         return response
 
     # Získáme informace o uživateli, pokud je přihlášen.
-    user = get_user_from_token()
+    user = get_user_from_token() # Zde nepoužíváme dekorátor, protože chceme logovat i neúspěšné pokusy
     user_id = user['id'] if user else None
 
     # Získáme další informace z požadavku.
