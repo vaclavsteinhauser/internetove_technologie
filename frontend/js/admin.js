@@ -22,8 +22,22 @@ document.addEventListener("DOMContentLoaded", async () => {
 async function loadGlobalSettings() {
     try {
         const settings = await apiRequest("/admin/settings/registration_approval");
+        const approvalContainer = document.getElementById('approval-queue-container');
+        const passwordPolicy = await apiRequest("/admin/settings/password_policy");
+
         document.getElementById('requireApprovalSwitch').checked = settings.require_registration_approval;
+
+        document.getElementById('passwordMinLength').value = passwordPolicy.min_length;
+        document.getElementById('passwordRequireUppercase').checked = passwordPolicy.require_uppercase;
+        document.getElementById('passwordRequireNumber').checked = passwordPolicy.require_number;
+        document.getElementById('passwordRequireSpecial').checked = passwordPolicy.require_special;
     } catch (err) {
+        // Zde je třeba ošetřit chybu, pokud se nepodaří načíst nastavení
+        const approvalContainer = document.getElementById('approval-queue-container');
+        if(approvalContainer) {
+            approvalContainer.innerHTML = `<div class="alert alert-danger">Chyba při načítání nastavení.</div>`;
+            approvalContainer.style.display = 'block';
+        }
         console.error("Chyba při načítání globálních nastavení:", err);
     }
 }
@@ -32,11 +46,33 @@ async function loadGlobalSettings() {
  * Uloží aktuální stav přepínače pro schvalování registrací.
  */
 async function handleSaveSettings() {
-    const newValue = document.getElementById('requireApprovalSwitch').checked;
+    const requireApprovalSwitch = document.getElementById('requireApprovalSwitch');
+    const isDisablingApproval = requireApprovalSwitch.checked === false && (await apiRequest("/admin/settings/registration_approval")).require_registration_approval === true;
+
+    if (isDisablingApproval) {
+        if (!confirm("Opravdu chcete vypnout vyžadování schválení? Všichni čekající uživatelé budou automaticky schváleni.")) {
+            return; // Uživatel zrušil akci
+        }
+    }
+    const approvalValue = requireApprovalSwitch.checked;
+    const passwordPolicy = {
+        min_length: parseInt(document.getElementById('passwordMinLength').value, 10),
+        require_uppercase: document.getElementById('passwordRequireUppercase').checked,
+        require_number: document.getElementById('passwordRequireNumber').checked,
+        require_special: document.getElementById('passwordRequireSpecial').checked
+    };
+
     try {
-        await apiRequest("/admin/settings/registration_approval", "PUT", { require_registration_approval: newValue });
+        // Uložení obou nastavení paralelně
+        await Promise.all([
+            apiRequest("/admin/settings/registration_approval", "PUT", { require_registration_approval: approvalValue }),
+            apiRequest("/admin/settings/password_policy", "PUT", passwordPolicy)
+        ]);
+
         alert("Nastavení bylo úspěšně uloženo.");
-        // Není potřeba nic znovu načítat, změna se projeví při příští registraci
+        // Znovu načteme vše, aby se projevil nový stav (např. zmizení fronty ke schválení)
+        await loadGlobalSettings();
+        await loadUsers();
     } catch (err) {
         alert(`Chyba při ukládání nastavení: ${err.message}`);
     }
@@ -48,29 +84,36 @@ async function handleSaveSettings() {
 async function loadUsers() {
     try {
         // Získání dat o uživatelích z API.
-        const users = await apiRequest("/admin/users");
+        const allUsers = await apiRequest("/admin/users");
         const currentUserId = parseInt(localStorage.getItem("user_id"), 10);
-        const tbody = document.querySelector("#users-table tbody");
+
+        // Rozdělení uživatelů
+        const approvedUsers = allUsers.filter(u => u.is_approved);
+        const pendingUsers = allUsers.filter(u => !u.is_approved);
+
+        // Vykreslení hlavní tabulky
+        const mainTbody = document.querySelector("#users-table tbody");
         // Vyprázdnění těla tabulky před novým vykreslením.
-        tbody.innerHTML = "";
+        mainTbody.innerHTML = "";
         // Pro každého uživatele vytvoří řádek v tabulce.
-        users.forEach(user => {
+        approvedUsers.forEach(user => {
+            const isCurrentUser = user.id === currentUserId;
+
             // Vytvoření HTML pro statusové odznaky
+            // Odznak "Čeká na schválení" zde již není potřeba, protože tito uživatelé jsou schválení
             const statusBadges = `
                 ${user.is_blocked ? '<span class="badge bg-danger">Blokován</span>' : ''}
-                ${!user.is_approved ? '<span class="badge bg-warning text-dark">Čeká na schválení</span>' : ''}
             `;
 
             // Vytvoření HTML pro tlačítka akcí
-            // Tlačítko pro smazání se nezobrazí pro aktuálně přihlášeného admina
+            // Tlačítka pro změnu role, blokování a smazání jsou pro aktuálního uživatele deaktivována/skryta.
             const actionButtons = `
                 <div class="btn-group btn-group-sm" role="group">
-                    <button class="btn btn-primary" onclick="updateRole(${user.id})">Uložit roli</button>
-                    <button class="btn ${user.is_blocked ? 'btn-success' : 'btn-warning'}" onclick="toggleBlock(${user.id})">
+                    <button class="btn btn-primary" onclick="updateRole(${user.id})" ${isCurrentUser ? 'disabled' : ''}>Uložit roli</button>
+                    <button class="btn ${user.is_blocked ? 'btn-success' : 'btn-warning'}" onclick="toggleBlock(${user.id})" ${isCurrentUser ? 'disabled' : ''}>
                         ${user.is_blocked ? 'Odblokovat' : 'Blokovat'}
                     </button>
-                    ${!user.is_approved ? `<button class="btn btn-info" onclick="approveUser(${user.id})">Schválit</button>` : ''}
-                    ${user.id !== currentUserId ? `
+                    ${!isCurrentUser ? `
                         <button class="btn btn-danger" onclick="deleteUser(${user.id})">Smazat</button>
                     ` : ''}
                 </div>
@@ -82,7 +125,7 @@ async function loadUsers() {
                 <td>${user.full_name}</td>
                 <td>${user.username}</td>
                 <td>
-                    <select data-user-id="${user.id}" class="form-select form-select-sm role-select">
+                    <select data-user-id="${user.id}" class="form-select form-select-sm role-select" ${isCurrentUser ? 'disabled' : ''}>
                         <option value="user" ${user.role === 'user' ? 'selected' : ''}>Uživatel</option>
                         <option value="politician" ${user.role === 'politician' ? 'selected' : ''}>Politik</option>
                         <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
@@ -95,11 +138,40 @@ async function loadUsers() {
                     ${actionButtons}
                 </td>
             `;
-            tbody.appendChild(tr);
+            mainTbody.appendChild(tr);
         });
 
+        // Vykreslení tabulky pro schválení
+        const approvalTbody = document.querySelector("#approval-queue-table tbody");
+        const approvalContainer = document.getElementById('approval-queue-container');
+        approvalTbody.innerHTML = "";
+
+        if (pendingUsers.length > 0) {
+            approvalContainer.style.display = 'block';
+            pendingUsers.forEach(user => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${user.id}</td>
+                    <td>${user.full_name}</td>
+                    <td>${user.username}</td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-success" onclick="approveUser(${user.id})">Schválit</button>
+                            <button class="btn btn-danger" onclick="deleteUser(${user.id})">Smazat</button>
+                        </div>
+                    </td>
+                `;
+                approvalTbody.appendChild(tr);
+            });
+        } else {
+            approvalContainer.style.display = 'none';
+        }
+
+
         // Přidání posluchače na tlačítko pro uložení nastavení (musí být zde, aby se obnovil po překreslení)
-        document.getElementById('saveSettingsBtn').addEventListener('click', handleSaveSettings);
+        const saveBtn = document.getElementById('saveSettingsBtn');
+        saveBtn.removeEventListener('click', handleSaveSettings); // Odstraníme starý, abychom předešli duplikaci
+        saveBtn.addEventListener('click', handleSaveSettings);
     } catch (err) {
         // Zobrazení chyby, pokud se nepodaří načíst uživatele.
         alert(`Chyba při načítání uživatelů: ${err.message}`);

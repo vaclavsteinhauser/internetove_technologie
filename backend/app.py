@@ -43,15 +43,27 @@ with app.app_context():
     for key, value in cur.fetchall():
         # Převod na boolean, pokud je to relevantní
         if value.lower() in ['true', 'false']:
-            app.config[key.upper()] = value.lower() == 'true'
+            app.config[key.upper()] = (value.lower() == 'true')
+        # Převod na integer pro délku hesla
+        elif key == 'password_min_length':
+            try:
+                app.config[key.upper()] = int(value)
+            except (ValueError, TypeError):
+                app.config[key.upper()] = 8 # Fallback
         else:
             app.config[key.upper()] = value
     cur.close()
     # Výchozí hodnota, pokud by v DB nic nebylo
     if 'REQUIRE_REGISTRATION_APPROVAL' not in app.config:
         app.config['REQUIRE_REGISTRATION_APPROVAL'] = False
+    if 'PASSWORD_MIN_LENGTH' not in app.config: app.config['PASSWORD_MIN_LENGTH'] = 8
+    if 'PASSWORD_REQUIRE_UPPERCASE' not in app.config: app.config['PASSWORD_REQUIRE_UPPERCASE'] = True
+    if 'PASSWORD_REQUIRE_NUMBER' not in app.config: app.config['PASSWORD_REQUIRE_NUMBER'] = True
+    if 'PASSWORD_REQUIRE_SPECIAL' not in app.config: app.config['PASSWORD_REQUIRE_SPECIAL'] = False
 
 # --- AUTHENTICATION ENDPOINTS ---
+
+import re
 
 @app.route("/api/auth/register", methods=["POST"])
 def register():
@@ -64,6 +76,11 @@ def register():
 
     if not username or not password or not email:
         return jsonify({"error": "Missing username, email or password"}), 400
+
+    # Validace hesla podle nastavené politiky
+    errors = validate_password(password)
+    if errors:
+        return jsonify({"error": "Password does not meet complexity requirements.", "details": errors}), 400
 
     # Zjistíme, zda je nutné schválení registrace
     is_approved = not app.config.get('REQUIRE_REGISTRATION_APPROVAL', False)
@@ -249,6 +266,11 @@ def reset_password():
     if not token or not new_password:
         return jsonify({"error": "Token and new password are required"}), 400
 
+    # Validace hesla podle nastavené politiky
+    errors = validate_password(new_password)
+    if errors:
+        return jsonify({"error": "Password does not meet complexity requirements.", "details": errors}), 400
+
     cur = mysql.connection.cursor()
     # Najdeme všechny neexpirované tokeny
     cur.execute("SELECT id, user_id, token_hash FROM password_reset_tokens WHERE expires_at > NOW()")
@@ -327,6 +349,36 @@ def get_user_from_token(): # Ponecháno pro případy, kdy je uživatel voliteln
         # Pokud je token neplatný, prošlý nebo chybí, vrátí se None.
         return None
 
+def validate_password(password):
+    """
+    Validuje heslo proti pravidlům v app.config.
+    Vrací seznam chyb.
+    """
+    errors = []
+    if len(password) < app.config.get('PASSWORD_MIN_LENGTH', 8):
+        errors.append(f"Password must be at least {app.config.get('PASSWORD_MIN_LENGTH', 8)} characters long.")
+    if app.config.get('PASSWORD_REQUIRE_UPPERCASE', True) and not re.search(r'[A-Z]', password):
+        errors.append("Password must contain at least one uppercase letter.")
+    if app.config.get('PASSWORD_REQUIRE_NUMBER', True) and not re.search(r'[0-9]', password):
+        errors.append("Password must contain at least one number.")
+    if app.config.get('PASSWORD_REQUIRE_SPECIAL', False) and not re.search(r'[\W_]', password):
+        errors.append("Password must contain at least one special character.")
+    return errors
+
+@app.route("/api/auth/password-policy", methods=["GET"])
+def get_password_policy():
+    """
+    Veřejný endpoint, který vrací aktuální politiku pro hesla.
+    Frontend ji použije pro zobrazení nápovědy uživateli.
+    """
+    policy = {
+        "min_length": app.config.get('PASSWORD_MIN_LENGTH', 8),
+        "require_uppercase": app.config.get('PASSWORD_REQUIRE_UPPERCASE', True),
+        "require_number": app.config.get('PASSWORD_REQUIRE_NUMBER', True),
+        "require_special": app.config.get('PASSWORD_REQUIRE_SPECIAL', False),
+    }
+    return jsonify(policy)
+
 
 # --- USER MANAGEMENT ENDPOINTS ---
 
@@ -338,6 +390,11 @@ def change_password(user):
     old_pw, new_pw = data.get("old_password"), data.get("new_password")
     if not old_pw or not new_pw:
         return jsonify({"error": "Missing password"}), 400
+
+    # Validace hesla podle nastavené politiky
+    errors = validate_password(new_pw)
+    if errors:
+        return jsonify({"error": "New password does not meet complexity requirements.", "details": errors}), 400
 
     # Načtení hashe aktuálního hesla z databáze pro ověření.
     cur = mysql.connection.cursor()
@@ -657,7 +714,49 @@ def admin_manage_registration_approval(user):
         # Aktualizujeme hodnotu v běžící aplikaci
         app.config['REQUIRE_REGISTRATION_APPROVAL'] = new_value
 
+        # Pokud se schvalování vypíná, schválíme všechny čekající uživatele
+        if new_value is False:
+            cur.execute("UPDATE users SET is_approved = TRUE WHERE is_approved = FALSE")
+            mysql.connection.commit()
+
         return jsonify({"message": "Setting updated successfully.", "require_registration_approval": new_value})
+
+@app.route("/api/admin/settings/password_policy", methods=["GET", "PUT"])
+@token_required
+def admin_manage_password_policy(user):
+    """
+    Získá nebo nastaví globální politiku pro složitost hesel.
+    Přístupné pouze pro administrátory.
+    """
+    if not user or user["role"] != 'admin':
+        return jsonify({"error": "Forbidden"}), 403
+
+    if request.method == "GET":
+        return get_password_policy()
+
+    if request.method == "PUT":
+        data = request.json
+        settings_to_update = {
+            'password_min_length': data.get('min_length'),
+            'password_require_uppercase': data.get('require_uppercase'),
+            'password_require_number': data.get('require_number'),
+            'password_require_special': data.get('require_special'),
+        }
+
+        cur = mysql.connection.cursor()
+        for key, value in settings_to_update.items():
+            if value is not None:
+                # Uložíme novou hodnotu do databáze
+                cur.execute(
+                    "INSERT INTO settings (setting_key, setting_value) VALUES (%s, %s) ON DUPLICATE KEY UPDATE setting_value = %s",
+                    (key, str(value).lower(), str(value).lower())
+                )
+                # Aktualizujeme hodnotu v běžící aplikaci
+                app.config[key.upper()] = value
+        mysql.connection.commit()
+        cur.close()
+
+        return jsonify({"message": "Password policy updated successfully."})
 
 @app.route("/api/admin/users/<int:user_id>", methods=["DELETE"])
 @token_required

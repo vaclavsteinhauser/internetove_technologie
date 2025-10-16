@@ -48,14 +48,26 @@ function renderNavbar() {
               `
             : '';
 
+        // Na větších obrazovkách (lg a více) zobrazíme odkazy přímo v liště.
+        // Na menších obrazovkách se skryjí a objeví se v dropdown menu.
+        const desktopLinks = /*html*/`
+            ${adminLinks ? `
+                <li class="nav-item d-none d-lg-block"><a class="nav-link" href="admin.html">Správa uživatelů</a></li>
+                <li class="nav-item d-none d-lg-block"><a class="nav-link" href="audit_log.html">Audit Log</a></li>
+            ` : ''}
+            <li class="nav-item d-none d-lg-block"><a class="nav-link" href="change_password.html">Změna hesla</a></li>
+        `;
+
         nav.innerHTML = /*html*/`
+            ${desktopLinks}
             <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" href="#" id="navbarUserDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                     ${fullName || username}
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark" aria-labelledby="navbarUserDropdown">
-                    ${adminLinks}
-                    <li><a class="dropdown-item" href="change_password.html">Změna hesla</a></li>
+                    <li class="d-lg-none">${adminLinks}</li>
+                    <li class="d-lg-none"><a class="dropdown-item" href="change_password.html">Změna hesla</a></li>
+                    <li class="d-lg-none"><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item" href="#" onclick="logout()">Odhlásit</a></li>
                 </ul>
             </li>

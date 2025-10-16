@@ -89,6 +89,12 @@ CREATE TABLE settings (
 -- Vložení výchozího nastavení pro schvalování registrací. 'false' znamená, že schvalování je vypnuté.
 INSERT INTO settings (setting_key, setting_value) VALUES ('require_registration_approval', 'false');
 
+-- Vložení výchozích pravidel pro složitost hesla.
+INSERT INTO settings (setting_key, setting_value) VALUES ('password_min_length', '8');
+INSERT INTO settings (setting_key, setting_value) VALUES ('password_require_uppercase', 'false');
+INSERT INTO settings (setting_key, setting_value) VALUES ('password_require_number', 'false');
+INSERT INTO settings (setting_key, setting_value) VALUES ('password_require_special', 'false');
+
 -- Vytvoření defaultního admina: admin/admin
 -- Heslo 'admin' je zahashováno pomocí Scrypt. Tento hash je pak použit pro ověření při přihlášení.
 INSERT INTO users (full_name, username, email, password_hash, role, is_approved) VALUES ('Admin User', 'admin', 'admin@example.com', 'scrypt:32768:8:1$VVvJHyXJa7gPnxjF$2ccc405caf0c24efbc94cc76426771f2bb6e45a97e93504bd3257a127e32be2fc8089ea8c434f86e1c713ae14f0a66beb9db2e38585ed55a7875ddbcf99a5674', 'admin', TRUE);
