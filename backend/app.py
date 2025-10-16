@@ -415,16 +415,39 @@ def change_password(user):
 
 @app.route("/api/threads", methods=["GET"])
 def list_threads():
+    # Získání vyhledávacího dotazu z URL parametrů
+    search_query = request.args.get('search', '')
+
     cur = mysql.connection.cursor()
-    cur.execute("""
-        SELECT t.id, t.title, u.username, t.created_at, u.full_name, t.is_closed, t.is_deleted, t.user_id
+
+    # Sestavení základního dotazu a podmínek
+    query = """
+        SELECT 
+            t.id, 
+            t.title, 
+            u.username, 
+            t.created_at, 
+            u.full_name, 
+            t.is_closed, 
+            t.is_deleted, 
+            t.user_id,
+            (SELECT COUNT(*) FROM posts p WHERE p.thread_id = t.id AND p.is_deleted = FALSE) as post_count
         FROM threads t
-                 JOIN users u ON t.user_id = u.id
-        WHERE t.is_deleted = FALSE -- Zobrazí pouze nesmazaná vlákna.
-        ORDER BY t.is_closed ASC, t.created_at DESC -- Seřadí vlákna tak, aby otevřená byla nahoře, a pak podle data vytvoření.
-    """)
+        JOIN users u ON t.user_id = u.id
+        WHERE t.is_deleted = FALSE
+    """
+    params = []
+
+    if search_query:
+        query += " AND t.title LIKE %s"
+        params.append(f"%{search_query}%")
+
+    query += " ORDER BY t.is_closed ASC, t.created_at DESC"
+    cur.execute(query, tuple(params))
     # Zpracování výsledků dotazu do seznamu slovníků pro snadnější použití na frontendu.
-    threads = [{"id": r[0], "title": r[1], "author_username": r[2], "created_at": r[3], "author_full_name": r[4], "is_closed": bool(r[5]), "author_id": r[7]} for r in cur.fetchall()]
+    threads = [
+        {"id": r[0], "title": r[1], "author_username": r[2], "created_at": r[3], "author_full_name": r[4], "is_closed": bool(r[5]), "author_id": r[7], "post_count": r[8]} 
+        for r in cur.fetchall()]
     return jsonify(threads)
 
 
@@ -448,11 +471,21 @@ def get_thread(thread_id):
     # Načtení základních informací o vlákně.
     cur = mysql.connection.cursor()
     cur.execute("SELECT id, title, user_id, created_at, is_closed, is_deleted FROM threads WHERE id=%s", (thread_id,))
-    thread = cur.fetchone()
+    thread_data = cur.fetchone()
     # Pokud vlákno neexistuje nebo je smazané, vrátí se chyba 404 Not Found.
-    if not thread or thread[5]: # thread is deleted
+    if not thread_data or thread_data[5]: # thread is deleted
         return jsonify({"error": "Not found"}), 404
 
+    # Načtení lajků pro všechny příspěvky v tomto vlákně
+    cur.execute("""
+        SELECT post_id, COUNT(*) as like_count, GROUP_CONCAT(user_id) as liked_by_users
+        FROM post_likes
+        WHERE post_id IN (SELECT id FROM posts WHERE thread_id = %s)
+        GROUP BY post_id
+    """, (thread_id,))
+    likes_data = {row[0]: {"count": row[1], "users": row[2].split(',') if row[2] else []} for row in cur.fetchall()}
+    current_user_id_str = str(current_user['id']) if current_user else None
+    
     # Načtení všech příspěvků patřících k tomuto vláknu.
     cur.execute("""
         SELECT p.id, u.username, p.content, p.created_at, u.role, p.is_anonymous, p.is_deleted, p.parent_post_id, p.user_id
@@ -478,11 +511,15 @@ def get_thread(thread_id):
             elif is_anonymous and current_user_role == 'admin':
                 author_name = f"{r[1]} (anonymně)"
 
+        post_likes = likes_data.get(post_id, {"count": 0, "users": []})
+
         # Uložení zpracovaného příspěvku do slovníku. Klíčem je ID příspěvku.
         all_posts[post_id] = {
             "id": post_id, "author": author_name, "content": content, 
             "created_at": r[3], "author_role": r[4], "is_deleted": is_deleted,
-            "parent_post_id": r[7], "author_id": r[8], "replies": []
+            "parent_post_id": r[7], "author_id": r[8], "replies": [],
+            "likes": post_likes["count"],
+            "liked_by_current_user": current_user_id_str in post_likes["users"]
         }
 
     # Sestavení stromové struktury (vnoření odpovědí).
@@ -495,11 +532,11 @@ def get_thread(thread_id):
     return jsonify({
         # Sestavení finální JSON odpovědi, která obsahuje informace o vlákně
         # a seznam příspěvků již ve vnořené struktuře.
-        "id": thread[0],
-        "title": thread[1],
-        "author_id": thread[2],
-        "created_at": thread[3],
-        "is_closed": bool(thread[4]), "is_deleted": bool(thread[5]),
+        "id": thread_data[0],
+        "title": thread_data[1],
+        "author_id": thread_data[2],
+        "created_at": thread_data[3],
+        "is_closed": bool(thread_data[4]), "is_deleted": bool(thread_data[5]),
         "posts": nested_posts
     })
 
@@ -642,6 +679,31 @@ def delete_post(user, post_id):
     cur.execute("UPDATE posts SET is_deleted=TRUE WHERE id=%s", (post_id,))
     mysql.connection.commit()
     return jsonify({"message": "Post deleted successfully"})
+
+@app.route("/api/posts/<int:post_id>/like", methods=["POST"])
+@token_required
+def toggle_like_post(user, post_id):
+    """
+    Přidá nebo odebere "like" u příspěvku.
+    """
+    user_id = user['id']
+    cur = mysql.connection.cursor()
+
+    # Zjistíme, zda uživatel již příspěvek lajkoval
+    cur.execute("SELECT * FROM post_likes WHERE post_id = %s AND user_id = %s", (post_id, user_id))
+    like = cur.fetchone()
+
+    if like:
+        # Pokud lajk existuje, smažeme ho (unlike)
+        cur.execute("DELETE FROM post_likes WHERE post_id = %s AND user_id = %s", (post_id, user_id))
+        message = "Post unliked"
+    else:
+        # Pokud lajk neexistuje, přidáme ho (like)
+        cur.execute("INSERT INTO post_likes (post_id, user_id) VALUES (%s, %s)", (post_id, user_id))
+        message = "Post liked"
+
+    mysql.connection.commit()
+    return jsonify({"message": message})
 
 
 # --- ADMIN-ONLY ENDPOINTS ---

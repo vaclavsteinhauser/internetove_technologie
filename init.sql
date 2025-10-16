@@ -79,6 +79,16 @@ CREATE TABLE password_reset_tokens (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- Tabulka pro "lajky" u příspěvků.
+CREATE TABLE post_likes (
+    post_id INT NOT NULL,
+    user_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (post_id, user_id), -- Každý uživatel může dát každému příspěvku jen jeden lajk.
+    FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 -- Tabulka pro globální nastavení aplikace.
 CREATE TABLE settings (
     setting_key VARCHAR(50) PRIMARY KEY,

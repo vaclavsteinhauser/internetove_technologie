@@ -1,34 +1,39 @@
 // Globální proměnná pro uchování ID aktuálně zobrazeného vlákna.
 // Umožňuje různým funkcím (např. přidání příspěvku) vědět, ve kterém vlákně se nacházíme.
 let currentThreadId = null;
+// Lokální mezipaměť pro všechna vlákna, aby se minimalizovaly dotazy na API.
+let allThreadsCache = [];
 
 /**
- * Načte všechna vlákna z API a rozdělí je na otevřená a uzavřená.
- * Vloží je do příslušných sekcí v levém panelu.
+ * Vykreslí seznam vláken do levého panelu na základě poskytnutých dat.
+ * @param {Array<object>} threads - Pole objektů vláken k vykreslení.
  */
-async function loadThreads() {
+function renderThreadsList(threads) {
+    const currentUserId = parseInt(localStorage.getItem("user_id"), 10);
+
+    const openThreadsContainer = document.getElementById("open-threads-content");
+    const closedThreadsContainer = document.getElementById("closed-threads-content");
+    const myThreadsContainer = document.getElementById("my-threads-content");
+
+    openThreadsContainer.innerHTML = "";
+    closedThreadsContainer.innerHTML = "";
+    myThreadsContainer.innerHTML = "";
+
+    // Rozdělení vláken podle stavu a autora
+    const openThreads = threads.filter(t => !t.is_closed);
+    const closedThreads = threads.filter(t => t.is_closed);
+    const myThreads = threads.filter(t => t.author_id === currentUserId);
+
+    // Vytvoření a vložení DOM elementů pro každé vlákno
+    openThreads.forEach(t => openThreadsContainer.appendChild(createThreadElement(t)));
+    closedThreads.forEach(t => closedThreadsContainer.appendChild(createThreadElement(t)));
+    myThreads.forEach(t => myThreadsContainer.appendChild(createThreadElement(t)));
+}
+
+async function fetchAndRenderThreads() {
     try {
-        const threads = await apiRequest("/threads");
-        const currentUserId = parseInt(localStorage.getItem("user_id"), 10);
-
-        const openThreadsContainer = document.getElementById("open-threads-content");
-        const closedThreadsContainer = document.getElementById("closed-threads-content");
-        const myThreadsContainer = document.getElementById("my-threads-content");
-
-        openThreadsContainer.innerHTML = "";
-        closedThreadsContainer.innerHTML = "";
-        myThreadsContainer.innerHTML = "";
-
-        // Rozdělení vláken podle stavu a autora
-        const openThreads = threads.filter(t => !t.is_closed);
-        const closedThreads = threads.filter(t => t.is_closed);
-        const myThreads = threads.filter(t => t.author_id === currentUserId);
-
-        // Vytvoření a vložení DOM elementů pro každé vlákno
-        openThreads.forEach(t => openThreadsContainer.appendChild(createThreadElement(t)));
-        closedThreads.forEach(t => closedThreadsContainer.appendChild(createThreadElement(t)));
-        myThreads.forEach(t => myThreadsContainer.appendChild(createThreadElement(t)));
-
+        allThreadsCache = await apiRequest("/threads");
+        renderThreadsList(allThreadsCache);
     } catch (err) {
         console.error("Chyba při načítání vláken:", err);
         alert("Chyba při načítání vláken.");
@@ -53,7 +58,10 @@ function createThreadElement(thread) {
             <h6 class="mb-1">${displayTitle}</h6>
             <small class="text-muted">${new Date(thread.created_at).toLocaleDateString()}</small>
         </div>
-        <small class="mb-1 text-muted">Autor: ${thread.author_full_name || 'Neznámý'} (@${thread.author_username})</small>
+        <div class="d-flex w-100 justify-content-between">
+            <small class="mb-1 text-muted">Autor: ${thread.author_full_name || 'Neznámý'} (@${thread.author_username})</small>
+            <small class="mb-1 text-muted">Příspěvků: ${thread.post_count}</small>
+        </div>
     `;
     a.addEventListener('click', (e) => {
         e.preventDefault();
@@ -196,11 +204,14 @@ function generatePostHtml(post, userRole, currentUserId, isFirstPost = false) {
     // Uživatel může smazat příspěvek, pokud je admin, nebo pokud je autorem příspěvku a ten nemá žádné odpovědi.
     const canDelete = !post.is_deleted && (userRole === 'admin' || (post.author_id === currentUserId && post.replies.length === 0));
     
+    const likeButtonClass = post.liked_by_current_user ? 'btn-primary' : 'btn-outline-primary';
+
     // Sestavení tlačítek akcí pro příspěvek
     const postActions = /*html*/`
         <div class="d-flex gap-2">
             ${!post.is_deleted && !isFirstPost ? `<button class="btn btn-sm btn-outline-secondary" data-action="show-reply" data-post-id="${post.id}">↪️ Odpovědět</button>` : ''}
             ${canDelete ? `<button class="btn btn-sm btn-outline-danger" data-action="delete-post" data-post-id="${post.id}">🗑️ Smazat</button>` : ''}
+            ${!post.is_deleted ? `<button class="btn btn-sm ${likeButtonClass}" data-action="like-post" data-post-id="${post.id}">👍 Lajk <span class="badge bg-secondary">${post.likes || 0}</span></button>` : ''}
         </div>
     `;
 
@@ -272,6 +283,9 @@ function handlePanelClick(e) {
         case 'delete-thread':
             deleteThread(currentThreadId);
             break;
+        case 'like-post':
+            toggleLike(postId);
+            break;
     }
 }
 
@@ -285,7 +299,7 @@ document.getElementById("threadForm").addEventListener("submit", async (e) => {
     try {
         await apiRequest("/threads", "POST", { title });
         e.target.reset();
-        await loadThreads(); // Znovu načteme seznam vláken, aby se zobrazilo to nové.
+        await fetchAndRenderThreads(); // Znovu načteme seznam vláken, aby se zobrazilo to nové.
     } catch (err) {
         alert(`Chyba při vytváření vlákna: ${err.message}`);
     }
@@ -340,14 +354,23 @@ async function deleteThread(threadId) {
     try {
         await apiRequest(`/threads/${threadId}`, "DELETE");
         // Po smazání vlákna:
-        // 1. Znovu načteme seznam vláken vlevo.
-        await loadThreads();
+        // 1. Znovu načteme seznam vláken vlevo z API.
+        await fetchAndRenderThreads();
         // 2. Vyčistíme pravý panel a zobrazíme zástupný text.
         document.getElementById("thread-content-panel").innerHTML = `<div class="card-body text-center text-muted p-5">Vyberte vlákno ze seznamu vlevo.</div>`;
         // 3. Resetujeme ID aktuálního vlákna.
         currentThreadId = null;
     } catch (err) {
         alert(`Chyba při mazání vlákna: ${err.message}`);
+    }
+}
+
+async function toggleLike(postId) {
+    try {
+        await apiRequest(`/posts/${postId}/like`, "POST");
+        await loadThreadContent(currentThreadId); // Znovu načteme vlákno pro aktualizaci počtu lajků
+    } catch (err) {
+        alert(`Chyba při lajkování: ${err.message}`);
     }
 }
 
@@ -363,11 +386,35 @@ async function toggleCloseThread(threadId) {
 }
 
 /**
+ * Nastaví posluchač pro vyhledávací pole.
+ * Filtruje lokálně uložená vlákna.
+ */
+function setupSearch() {
+    const searchInput = document.getElementById('thread-search-input');
+    if (!searchInput) return;
+
+    searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase();
+        
+        // Filtrujeme vlákna z lokální mezipaměti
+        const filteredThreads = allThreadsCache.filter(thread => 
+            thread.title.toLowerCase().includes(query)
+        );
+
+        // Vykreslíme vyfiltrovaný seznam
+        renderThreadsList(filteredThreads);
+    });
+}
+
+/**
  * Inicializační funkce, která se spustí po načtení stránky.
  */
 async function initializeForum() {
-    // Nejprve načteme seznam všech vláken do levého panelu.
-    await loadThreads();
+    // Nastavení vyhledávání
+    setupSearch();
+
+    // Načteme všechna vlákna z API a vykreslíme je.
+    await fetchAndRenderThreads();
 
     // Zkontrolujeme, zda je v URL specifikováno ID vlákna k načtení.
     const params = new URLSearchParams(window.location.search);

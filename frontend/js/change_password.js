@@ -1,21 +1,41 @@
-/**
- * Načte a zobrazí aktuální politiku hesel.
- */
-async function displayPasswordPolicy() {
-    try {
-        const policy = await apiRequest("/auth/password-policy", "GET", null, false);
-        const rules = [];
-        rules.push(`Minimální délka: ${policy.min_length} znaků.`);
-        if (policy.require_uppercase) rules.push("Musí obsahovat velké písmeno.");
-        if (policy.require_number) rules.push("Musí obsahovat číslici.");
-        if (policy.require_special) rules.push("Musí obsahovat speciální znak.");
+// Globální proměnná pro uložení politiky hesel
+let passwordPolicy = null;
 
-        const policyInfoElement = document.getElementById('password-policy-info');
-        if (policyInfoElement) {
-            policyInfoElement.innerHTML = `<strong>Požadavky na heslo:</strong><br>${rules.join('<br>')}`;
-        }
-    } catch (err) {
-        console.error("Failed to load password policy:", err);
+function checkPasswordStrength(password) {
+    if (!passwordPolicy || !password) {
+        updateStrengthUI(0, "Zadejte heslo", "bg-secondary");
+        return;
+    }
+
+    let score = 0;
+    if (password.length >= passwordPolicy.min_length) score++;
+    if (passwordPolicy.require_uppercase && /[A-Z]/.test(password)) score++;
+    if (passwordPolicy.require_number && /[0-9]/.test(password)) score++;
+    if (passwordPolicy.require_special && /[\W_]/.test(password)) score++;
+
+    const strengthLevels = {
+        0: { text: "Velmi slabé", color: "bg-danger", width: "25%" },
+        1: { text: "Velmi slabé", color: "bg-danger", width: "25%" },
+        2: { text: "Slabé", color: "bg-warning", width: "50%" },
+        3: { text: "Střední", color: "bg-info", width: "75%" },
+        4: { text: "Silné", color: "bg-success", width: "100%" },
+    };
+
+    const level = strengthLevels[score] || strengthLevels[0];
+    updateStrengthUI(level.width, level.text, level.color);
+}
+
+function updateStrengthUI(width, text, colorClass) {
+    const strengthBar = document.getElementById('password-strength-bar');
+    const strengthText = document.getElementById('password-strength-text');
+
+    if (strengthBar) {
+        strengthBar.style.width = width;
+        strengthBar.className = 'progress-bar'; // Reset barev
+        strengthBar.classList.add(colorClass);
+    }
+    if (strengthText) {
+        strengthText.textContent = text;
     }
 }
 
@@ -56,5 +76,11 @@ document.getElementById("changePasswordForm").addEventListener("submit", async (
 
 // Načtení politiky hesel při načtení stránky
 document.addEventListener("DOMContentLoaded", () => {
-    displayPasswordPolicy();
+    // Načteme politiku a uložíme si ji pro kontrolu síly
+    passwordPolicy = await displayPasswordPolicy('password-policy-info');
+
+    const newPasswordInput = document.getElementById('new_password');
+    if (newPasswordInput) {
+        newPasswordInput.addEventListener('input', (e) => checkPasswordStrength(e.target.value));
+    }
 });

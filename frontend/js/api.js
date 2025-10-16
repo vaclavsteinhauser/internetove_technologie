@@ -80,7 +80,7 @@ async function apiRequest(endpoint, method = "GET", data = null, auth = true) {
         // Pokud je chyba 401 (Unauthorized) a nejedná se o pokus o přihlášení/refresh
         if (res.status === 401 && !originalRequest.endpoint.includes('/auth/')) {
             if (isRefreshing) {
-                // Pokud už probíhá refresh, zařadíme požadavek do fronty
+                // Pokud už probíhá refresh, zařadíme požadavek do fronty a počkáme na nový token
                 return new Promise((resolve, reject) => {
                     failedQueue.push({ resolve, reject });
                 }).then(token => {
@@ -93,7 +93,7 @@ async function apiRequest(endpoint, method = "GET", data = null, auth = true) {
 
             return new Promise((resolve, reject) => {
                 refreshToken().then(newAccessToken => {
-                    processQueue(null, newAccessToken);
+                    processQueue(null, newAccessToken); // Zpracujeme frontu čekajících požadavků
                     resolve(apiRequest(endpoint, method, data, auth)); // Zopakujeme původní požadavek
                 }).catch(err => {
                     processQueue(err, null);
@@ -105,8 +105,12 @@ async function apiRequest(endpoint, method = "GET", data = null, auth = true) {
         }
 
         // Pro ostatní chyby vyhodíme standardní error
-        const errorMessage = (errorData.message || errorData.error || `API chyba: ${res.status}`);
-        throw new Error(errorMessage);
+        const error = new Error(errorData.message || errorData.error || `API chyba: ${res.status}`);
+        // Přidáme k chybě i detaily, pokud je server poslal (např. u validace hesla)
+        if (errorData.details) {
+            error.details = errorData.details;
+        }
+        throw error;
     }
     // Pokud byl požadavek úspěšný, vrátí odpověď převedenou z JSONu.
     return await res.json();
