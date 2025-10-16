@@ -20,7 +20,7 @@ app.config['MYSQL_USER'] = os.getenv("DB_USER", "forumuser")
 app.config['MYSQL_PASSWORD'] = os.getenv("DB_PASSWORD", "forumpass")
 app.config['MYSQL_DB'] = os.getenv("DB_NAME", "forum")
 # SECRET_KEY je klíčový pro podepisování JWT tokenů. Měl by být v produkci velmi bezpečný a tajný.
-app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "c6hnErwqQ7VZuenS")
+app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "c6hnErwqQ7VZuenS") 
 
 # --- Konfigurace pro odesílání e-mailů (Flask-Mail) ---
 # Konfigurace pro lokální vývoj s MailHogem.
@@ -36,6 +36,21 @@ app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER', 'noreply@fo
 mysql = MySQL(app)
 mail = Mail(app)
 
+# --- Načtení nastavení z DB při startu ---
+with app.app_context():
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT setting_key, setting_value FROM settings")
+    for key, value in cur.fetchall():
+        # Převod na boolean, pokud je to relevantní
+        if value.lower() in ['true', 'false']:
+            app.config[key.upper()] = value.lower() == 'true'
+        else:
+            app.config[key.upper()] = value
+    cur.close()
+    # Výchozí hodnota, pokud by v DB nic nebylo
+    if 'REQUIRE_REGISTRATION_APPROVAL' not in app.config:
+        app.config['REQUIRE_REGISTRATION_APPROVAL'] = False
+
 # --- AUTHENTICATION ENDPOINTS ---
 
 @app.route("/api/auth/register", methods=["POST"])
@@ -50,16 +65,19 @@ def register():
     if not username or not password or not email:
         return jsonify({"error": "Missing username, email or password"}), 400
 
+    # Zjistíme, zda je nutné schválení registrace
+    is_approved = not app.config.get('REQUIRE_REGISTRATION_APPROVAL', False)
+
     # Vygenerování bezpečného hashe hesla. Nikdy neukládáme hesla v čistém textu!
     password_hash = generate_password_hash(password)
 
     # Vytvoření kurzoru pro interakci s databází.
     cur = mysql.connection.cursor()
     try:
-        # Provedení SQL dotazu pro vložení nového uživatele.
+        # Provedení SQL dotazu pro vložení nového uživatele s příznakem schválení.
         cur.execute(
-            "INSERT INTO users (full_name, username, email, password_hash) VALUES (%s, %s, %s, %s)",
-            (full_name, username, email, password_hash)
+            "INSERT INTO users (full_name, username, email, password_hash, is_approved) VALUES (%s, %s, %s, %s, %s)",
+            (full_name, username, email, password_hash, is_approved)
         )
         # Potvrzení transakce (uložení změn do databáze).
         mysql.connection.commit()
@@ -67,7 +85,10 @@ def register():
         # Pokud vložení selže (např. kvůli UNIQUE omezení na 'username'), vrátí se chyba.
         return jsonify({"error": "User already exists"}), 400
 
-    return jsonify({"message": "User registered"}), 201 # HTTP 201 Created
+    message = "User registered successfully."
+    if not is_approved:
+        message = "Registration successful. Your account is pending administrator approval."
+    return jsonify({"message": message}), 201
 
 
 @app.route("/api/auth/login", methods=["POST"])
@@ -77,11 +98,19 @@ def login():
 
     # Načtení uživatele z databáze podle uživatelského jména.
     cur = mysql.connection.cursor()
-    cur.execute("SELECT id, password_hash, role, full_name, username FROM users WHERE username=%s", (username,))
+    cur.execute("SELECT id, password_hash, role, full_name, username, is_blocked, is_approved FROM users WHERE username=%s", (username,))
     user = cur.fetchone()
+    
     # Ověření, zda uživatel existuje a zda se zadané heslo shoduje s uloženým hashem.
     if not user or not check_password_hash(user[1], password):
         return jsonify({"error": "Invalid credentials"}), 401
+
+    # Kontrola, zda je účet zablokován nebo čeká na schválení.
+    if user[5]: # is_blocked
+        return jsonify({"error": "Your account has been blocked by an administrator."}), 403
+    
+    if not user[6]: # is_approved
+        return jsonify({"error": "Your account is pending administrator approval."}), 403
 
     # 1. Generování krátkodobého ACCESS TOKENU (15 minut)
     access_token = jwt.encode(
@@ -567,9 +596,12 @@ def admin_get_users(user):
         return jsonify({"error": "Forbidden"}), 403
 
     cur = mysql.connection.cursor()
-    cur.execute("SELECT id, full_name, username, role FROM users")
-    users = [{"id": r[0], "full_name": r[1], "username": r[2], "role": r[3]} for r in cur.fetchall()]
+    cur.execute("SELECT id, full_name, username, role, is_blocked, is_approved FROM users ORDER BY id")
+    users = [{"id": r[0], "full_name": r[1], "username": r[2], "role": r[3], "is_blocked": bool(r[4]), "is_approved": bool(r[5])} for r in cur.fetchall()]
     return jsonify(users)
+
+
+
 
 
 @app.route("/api/admin/users/<int:user_id>/role", methods=["PUT"])
@@ -590,6 +622,96 @@ def admin_change_user_role(user, user_id):
     mysql.connection.commit()
 
     return jsonify({"message": "User role updated"})
+
+@app.route("/api/admin/settings/registration_approval", methods=["GET", "PUT"])
+@token_required
+def admin_manage_registration_approval(user):
+    """
+    Získá nebo nastaví globální požadavek na schvalování registrací.
+    Přístupné pouze pro administrátory.
+    """
+    if not user or user["role"] != 'admin':
+        return jsonify({"error": "Forbidden"}), 403
+
+    cur = mysql.connection.cursor()
+
+    if request.method == "GET":
+        # Načteme aktuální hodnotu z app.config, která je načtena při startu a aktualizována při PUT
+        current_value = app.config.get('REQUIRE_REGISTRATION_APPROVAL', False)
+        return jsonify({"require_registration_approval": current_value})
+
+    if request.method == "PUT":
+        data = request.json
+        new_value = data.get("require_registration_approval")
+
+        if not isinstance(new_value, bool):
+            return jsonify({"error": "Invalid value, boolean expected."}), 400
+
+        # Uložíme novou hodnotu do databáze
+        cur.execute(
+            "INSERT INTO settings (setting_key, setting_value) VALUES ('require_registration_approval', %s) ON DUPLICATE KEY UPDATE setting_value = %s",
+            (str(new_value).lower(), str(new_value).lower())
+        )
+        mysql.connection.commit()
+
+        # Aktualizujeme hodnotu v běžící aplikaci
+        app.config['REQUIRE_REGISTRATION_APPROVAL'] = new_value
+
+        return jsonify({"message": "Setting updated successfully.", "require_registration_approval": new_value})
+
+@app.route("/api/admin/users/<int:user_id>", methods=["DELETE"])
+@token_required
+def admin_delete_user(user, user_id):
+    """
+    Smaže uživatele z databáze.
+    Přístupné pouze pro administrátory. Administrátor nemůže smazat sám sebe.
+    """
+    if not user or user["role"] != 'admin':
+        return jsonify({"error": "Forbidden"}), 403
+
+    # Zabráníme adminovi smazat sám sebe
+    if user['id'] == user_id:
+        return jsonify({"error": "You cannot delete your own account."}), 400
+
+    cur = mysql.connection.cursor()
+    cur.execute("DELETE FROM users WHERE id = %s", (user_id,))
+    mysql.connection.commit()
+
+    return jsonify({"message": "User deleted successfully."})
+
+@app.route("/api/admin/users/<int:user_id>/block", methods=["PUT"])
+@token_required
+def admin_toggle_block_user(user, user_id):
+    """
+    Přepíná stav blokace uživatele (blokovat/odblokovat).
+    Přístupné pouze pro administrátory.
+    """
+    if not user or user["role"] != 'admin':
+        return jsonify({"error": "Forbidden"}), 403
+
+    cur = mysql.connection.cursor()
+    # Přepneme hodnotu is_blocked na její opak
+    cur.execute("UPDATE users SET is_blocked = NOT is_blocked WHERE id = %s", (user_id,))
+    mysql.connection.commit()
+
+    return jsonify({"message": "User block status toggled."})
+
+@app.route("/api/admin/users/<int:user_id>/approve", methods=["PUT"])
+@token_required
+def admin_approve_user(user, user_id):
+    """
+    Schválí registraci uživatele.
+    Přístupné pouze pro administrátory.
+    """
+    if not user or user["role"] != 'admin':
+        return jsonify({"error": "Forbidden"}), 403
+
+    cur = mysql.connection.cursor()
+    cur.execute("UPDATE users SET is_approved = TRUE WHERE id = %s", (user_id,))
+    mysql.connection.commit()
+
+    return jsonify({"message": "User has been approved."})
+
 
 @app.route("/api/admin/audit-log", methods=["GET"])
 @token_required

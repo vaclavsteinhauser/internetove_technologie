@@ -11,12 +11,12 @@ document.getElementById("registerForm").addEventListener("submit", async (e) => 
     try {
         // Odeslání požadavku na API pro registraci nového uživatele.
         // Autorizace (auth: false) není potřeba.
-        await apiRequest("/auth/register", "POST", { full_name, username, email, password }, false);
+        const response = await apiRequest("/auth/register", "POST", { full_name, username, email, password }, false);
         // Po úspěšné registraci se zobrazí upozornění a uživatel je přesměrován na přihlašovací stránku.
-        alert("Registrace úspěšná, můžeš se přihlásit.");
+        alert(response.message || "Registrace úspěšná, můžeš se přihlásit.");
         window.location.href = "login.html";
     } catch (err) {
         // V případě chyby (např. uživatelské jméno již existuje) se zobrazí chybová hláška.
-        alert("Chyba při registraci!");
+        alert(`Chyba při registraci: ${err.message}`);
     }
 });

@@ -14,7 +14,9 @@ CREATE TABLE users (
     email VARCHAR(120) UNIQUE NOT NULL,         -- E-mailová adresa, klíčová pro obnovu hesla.
     password_hash VARCHAR(255) NOT NULL,        -- Bezpečně uložený hash hesla (např. pomocí Scrypt, Bcrypt).
     role VARCHAR(20) NOT NULL DEFAULT 'user',   -- Role uživatele ('user', 'politician', 'admin') pro řízení oprávnění.
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- Časové razítko vytvoření účtu.
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Časové razítko vytvoření účtu.
+    is_blocked BOOLEAN NOT NULL DEFAULT FALSE,  -- Příznak, zda je účet zablokován administrátorem.
+    is_approved BOOLEAN NOT NULL DEFAULT TRUE   -- Příznak, zda byla registrace schválena administrátorem.
 );
 
 -- Tabulka pro diskuzní vlákna.
@@ -77,6 +79,16 @@ CREATE TABLE password_reset_tokens (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- Tabulka pro globální nastavení aplikace.
+CREATE TABLE settings (
+    setting_key VARCHAR(50) PRIMARY KEY,
+    setting_value VARCHAR(255) NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Vložení výchozího nastavení pro schvalování registrací. 'false' znamená, že schvalování je vypnuté.
+INSERT INTO settings (setting_key, setting_value) VALUES ('require_registration_approval', 'false');
+
 -- Vytvoření defaultního admina: admin/admin
 -- Heslo 'admin' je zahashováno pomocí Scrypt. Tento hash je pak použit pro ověření při přihlášení.
-INSERT INTO users (full_name, username, email, password_hash, role) VALUES ('Admin User', 'admin', 'admin@example.com', 'scrypt:32768:8:1$VVvJHyXJa7gPnxjF$2ccc405caf0c24efbc94cc76426771f2bb6e45a97e93504bd3257a127e32be2fc8089ea8c434f86e1c713ae14f0a66beb9db2e38585ed55a7875ddbcf99a5674', 'admin');
+INSERT INTO users (full_name, username, email, password_hash, role, is_approved) VALUES ('Admin User', 'admin', 'admin@example.com', 'scrypt:32768:8:1$VVvJHyXJa7gPnxjF$2ccc405caf0c24efbc94cc76426771f2bb6e45a97e93504bd3257a127e32be2fc8089ea8c434f86e1c713ae14f0a66beb9db2e38585ed55a7875ddbcf99a5674', 'admin', TRUE);
