@@ -54,35 +54,21 @@ services:
     volumes:
       - ./backend:/app
 
-  # Služba pro frontend (statické HTML/CSS/JS soubory)
+  # Služba pro frontend (statické HTML/CSS/JS soubory) a proxy na backendovou API
   frontend:
-    # Použije se lehký webový server Nginx.
     image: nginx:alpine
     container_name: forum-frontend
     restart: always
-    # Mapuje lokální adresář `./frontend` do kořenového adresáře Nginx serveru.
     ports:
-      -"8000:80"
-    # Příznak ':ro' (read-only) znamená, že kontejner nemůže měnit tyto soubory.
-    volumes:
-      - ./frontend:/usr/share/nginx/html:ro
-
-  # Nová služba: Reverzní proxy pro HTTPS
-  nginx-proxy:
-    image: nginx:alpine
-    container_name: forum-proxy
-    restart: always
-    ports:
-      - "80:80"   # Port pro přesměrování na HTTPS
-      - "443:443" # Port pro HTTPS
+      - "8000:80"   # Port pro přesměrování na HTTPS
     volumes:
       # Mapujeme náš vlastní konfigurační soubor pro Nginx
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       # Mapujeme adresář s SSL certifikáty (musíš si je vygenerovat/získat)
       # Příklad pro Let's Encrypt
       - ./nginx/certs:/etc/ssl/certs:ro
+      - ./frontend/:/var/www/html:ro
     depends_on:
-      - frontend
       - backend
 
   # Služba pro testování odesílání e-mailů

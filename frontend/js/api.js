@@ -1,5 +1,4 @@
-// Konstanta definující základní URL adresu backendového API.
-const API_URL = "http://localhost:5000/api";
+const API_URL = "/api";
 
 let isRefreshing = false;
 let failedQueue = [];
