@@ -1,3 +1,5 @@
+let passwordPolicy = null;
+
 document.getElementById("changePasswordForm").addEventListener("submit", async (e) => {
     // Zabrání výchozí akci formuláře (odeslání a znovunačtení stránky).
     e.preventDefault();
@@ -33,13 +35,42 @@ document.getElementById("changePasswordForm").addEventListener("submit", async (
     }
 });
 
+function validatePasswordConfirmation() {
+    const password = document.getElementById("new_password").value;
+    const confirmPassword = document.getElementById("confirm_password").value;
+    const errorElement = document.getElementById("password-match-error");
+    const passwordsMatch = password === confirmPassword;
+
+    errorElement.style.display = passwordsMatch ? "none" : "block";
+    return passwordsMatch;
+}
+
+function validateForm() {
+    const form = document.getElementById("changePasswordForm");
+    const button = document.getElementById("changePasswordButton");
+    const inputs = form.querySelectorAll("input[required]");
+
+    let allFilled = true;
+    for (const input of inputs) {
+        if (!input.value.trim()) {
+            allFilled = false;
+            break;
+        }
+    }
+    const passwordsMatch = validatePasswordConfirmation();
+    button.disabled = !allFilled || !passwordsMatch;
+}
+
 // Načtení politiky hesel při načtení stránky
 document.addEventListener("DOMContentLoaded", async () => {
     // Načteme politiku a uložíme si ji pro kontrolu síly
     passwordPolicy = await displayPasswordPolicy('password-policy-info');
 
     const newPasswordInput = document.getElementById('new_password');
-    if (newPasswordInput) {
-        newPasswordInput.addEventListener('input', (e) => checkPasswordStrength(e.target.value, passwordPolicy));
-    }
+    const formInputs = document.querySelectorAll("#changePasswordForm input[required]");
+
+    newPasswordInput.addEventListener('input', (e) => checkPasswordStrength(e.target.value, passwordPolicy));
+
+    formInputs.forEach(input => input.addEventListener('input', validateForm));
+    validateForm();
 });
