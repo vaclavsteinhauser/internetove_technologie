@@ -3,25 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Přihlášení</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>Přihlášení - Fórum</title>
+    <link rel="stylesheet" href="css/bootstrap.css">
 </head>
-<body>
-<div id="navbar-container"></div>
-<div class="container">
-    <h1>Přihlášení</h1>
-    <form id="loginForm" class="form">
-        <input id="username" type="text" placeholder="Uživatel" required>
-        <input id="password" type="password" placeholder="Heslo" required>
-        <button type="submit" class="btn">Přihlásit</button>
-    </form>
-    <div class="links">
-        <p>Nemáš účet? <a href="register.html">Zaregistruj se</a></p>
-        <p><a href="forgot_password.html">Zapomenuté heslo?</a></p>
-    </div>
-</div>
-<script src="js/api.js"></script>
-<script src="js/navbar.js"></script>
-<script src="js/login.js" defer></script>
+<body class="bg-light d-flex flex-column min-vh-100">
+    <div id="navbar-container"></div>
+    <main class="flex-grow-1 d-flex align-items-center">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-6 col-lg-5">
+                    <div class="card shadow-sm">
+                        <div class="card-body p-4">
+                            <h1 class="card-title text-center mb-4">Přihlášení</h1>
+                            <form id="loginForm">
+                                <div class="mb-3"><input id="username" type="text" class="form-control" placeholder="Uživatelské jméno" required></div>
+                                <div class="mb-3"><input id="password" type="password" class="form-control" placeholder="Heslo" required></div>
+                                <div class="d-grid"><button type="submit" class="btn btn-primary">Přihlásit</button></div>
+                            </form>
+                            <div class="text-center mt-3">
+                                <p class="mb-1">Nemáš účet? <a href="register.html">Zaregistruj se</a></p>
+                                <a href="forgot_password.html">Zapomenuté heslo?</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script src="js/bootstrap.bundle.min.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/navbar.js"></script>
+    <script src="js/login.js" defer></script>
 </body>
 </html>

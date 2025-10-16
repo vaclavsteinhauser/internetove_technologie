@@ -3,44 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fórum</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>Fórum - Diskuse</title>
+    <link rel="stylesheet" href="css/bootstrap.css">
 </head>
-<body>
-<div id="navbar-container"></div>
-<div class="forum-container">
-    <div class="threads-list-panel content-box">
-            <div id="my-threads-section" class="threads-section collapsed">
-                <h3 class="section-header">
-                    <span class="collapser-icon"></span>
-                    Moje vlákna
-                </h3>
-                <div id="my-threads-content" class="threads-content"></div>
-            </div>
-            <div class="threads-section open-threads">
-                <h3 class="section-header" data-target="open-threads-content"><span class="collapser-icon"></span>Otevřená vlákna</h3>
-                <div id="open-threads-content" class="threads-content">
-                    <!-- Open threads will be rendered here -->
+<body class="bg-light">
+    <div id="navbar-container"></div>
+    <div class="container-fluid mt-3">
+        <div class="row g-3">
+            <!-- Levý sloupec se seznamem vláken -->
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="accordion" id="threads-accordion">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="my-threads-heading"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#my-threads-collapse">Moje vlákna</button></h2>
+                                <div id="my-threads-collapse" class="accordion-collapse collapse" data-bs-parent="#threads-accordion"><div id="my-threads-content" class="list-group list-group-flush"></div></div>
+                            </div>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="open-threads-heading"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#open-threads-collapse">Otevřená vlákna</button></h2>
+                                <div id="open-threads-collapse" class="accordion-collapse collapse show" data-bs-parent="#threads-accordion"><div id="open-threads-content" class="list-group list-group-flush"></div></div>
+                            </div>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="closed-threads-heading"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#closed-threads-collapse">Uzavřená vlákna</button></h2>
+                                <div id="closed-threads-collapse" class="accordion-collapse collapse" data-bs-parent="#threads-accordion"><div id="closed-threads-content" class="list-group list-group-flush"></div></div>
+                            </div>
+                        </div>
+                        <hr>
+                        <h5 class="mb-3">Vytvořit nové vlákno</h5>
+                        <form id="threadForm">
+                            <input id="title" type="text" class="form-control mb-2" placeholder="Název vlákna" required>
+                            <div class="d-grid"><button type="submit" class="btn btn-primary">Vytvořit</button></div>
+                        </form>
+                    </div>
                 </div>
             </div>
-            <div class="threads-section closed-threads collapsed">
-                <h3 class="section-header" data-target="closed-threads-content"><span class="collapser-icon"></span>Uzavřená vlákna</h3>
-                <div id="closed-threads-content" class="threads-content"></div>
+            <!-- Pravý sloupec s obsahem vlákna -->
+            <div class="col-lg-8">
+                <div class="card" id="thread-content-panel"><div class="card-body text-center text-muted p-5">Vyberte vlákno ze seznamu vlevo.</div></div>
             </div>
-            <hr>
-            <h3>Vytvořit nové vlákno</h3>
-            <form id="threadForm" class="form">
-                <input id="title" type="text" placeholder="Název vlákna" required>
-                <button type="submit" class="btn">Vytvořit</button>
-            </form>
+        </div>
     </div>
-    <div class="thread-content-panel content-box" id="thread-content-panel">
-        <!-- Obsah vybraného vlákna se načte sem -->
-        <p class="placeholder">Vyberte vlákno ze seznamu vlevo.</p>
-    </div>
-</div>
-<script src="js/api.js"></script>
-<script src="js/navbar.js"></script>
-<script src="js/forum.js" defer></script>
+    <script src="js/bootstrap.bundle.min.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/navbar.js"></script>
+    <script src="js/forum.js" defer></script>
 </body>
 </html>

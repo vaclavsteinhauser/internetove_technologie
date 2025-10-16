@@ -41,38 +41,25 @@ async function loadThreads() {
  * @returns {HTMLElement} - Div element reprezentující vlákno.
  */
 function createThreadElement(thread) {
-    const div = document.createElement("div");
-    div.className = "thread";
-    div.setAttribute("data-thread-id", thread.id);
+    const a = document.createElement("a");
+    a.href = "#";
+    a.className = "list-group-item list-group-item-action";
+    a.setAttribute("data-thread-id", thread.id);
 
     const displayTitle = thread.is_closed ? `${thread.title} (uzavřeno)` : thread.title;
 
-    div.innerHTML = `
-        <div class="thread-summary">
-            <div class="collapser-wrapper">
-                <span class="collapser-icon"></span>
-            </div>
-            <h3 class="thread-title">${displayTitle}</h3> 
+    a.innerHTML = `
+        <div class="d-flex w-100 justify-content-between">
+            <h6 class="mb-1">${displayTitle}</h6>
+            <small class="text-muted">${new Date(thread.created_at).toLocaleDateString()}</small>
         </div>
-        <div class="thread-details">
-            <p><strong>Autor:</strong> ${thread.author_full_name || 'Neznámý'}</p>
-            <p><strong>Uživ. jméno:</strong> @${thread.author_username}</p>
-            <p><strong>Vytvořeno:</strong> ${new Date(thread.created_at).toLocaleString()}</p>
-        </div>
+        <small class="mb-1 text-muted">Autor: ${thread.author_full_name || 'Neznámý'} (@${thread.author_username})</small>
     `;
-    
-    const summary = div.querySelector('.thread-summary');
-    // Přidání posluchače událostí na hlavičku vlákna
-    summary.addEventListener('click', (e) => {
-        // Pokud bylo kliknuto na ikonu nebo její obal, rozbalí/sbalí se detaily vlákna.
-        if (e.target.closest('.collapser-wrapper')) {
-            div.classList.toggle('expanded');
-        } else {
-            // Jinak se načte obsah celého vlákna do pravého panelu.
-            loadThreadContent(thread.id);
-        }
+    a.addEventListener('click', (e) => {
+        e.preventDefault();
+        loadThreadContent(thread.id);
     });
-    return div;
+    return a;
 }
 
 async function loadThreadContent(threadId) {
@@ -85,14 +72,14 @@ async function loadThreadContent(threadId) {
 
     currentThreadId = threadId;
     const panel = document.getElementById("thread-content-panel");
-    panel.innerHTML = `<p>Načítám vlákno...</p>`;
+    panel.innerHTML = `<div class="card-body text-center p-5"><div class="spinner-border" role="status"><span class="visually-hidden">Načítám...</span></div></div>`;
 
     // Zvýraznění aktivního vlákna v levém panelu
     // Nejprve odstraníme zvýraznění ze všech, pak přidáme na to správné.
-    document.querySelectorAll('.threads-list-panel .thread').forEach(el => {
+    document.querySelectorAll('.list-group-item').forEach(el => {
         el.classList.remove('active');
         if (el.getAttribute('data-thread-id') == threadId) {
-            el.classList.add('active');
+            el.classList.add('active', 'bg-primary-subtle');
         }
     });
 
@@ -107,7 +94,7 @@ async function loadThreadContent(threadId) {
 
     } catch (err) {
         console.error(`Chyba při načítání vlákna ${threadId}:`, err);
-        panel.innerHTML = `<p class="error">Nepodařilo se načíst obsah vlákna.</p>`;
+        panel.innerHTML = `<div class="card-body text-center text-danger p-5">Nepodařilo se načíst obsah vlákna.</div>`;
     }
 }
 
@@ -125,18 +112,17 @@ function renderThreadContent(panel, thread, userRole, currentUserId) {
     const postFormHtml = generatePostFormHtml(thread);
 
     // Sestavení finálního HTML a vložení do panelu
-    panel.innerHTML = `
-        <div class="thread-header">
-            <h2>${thread.title}</h2>
-            <div class="thread-actions">${threadActionsHtml}</div>
+    panel.innerHTML = /*html*/`
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">${thread.title}</h5>
+            <div class="d-flex gap-2">${threadActionsHtml}</div>
         </div>
-        <div id="posts">${postsHtml}</div>
-        <div class="post-form-container">
-            <hr>
-            <h3>Přidat příspěvek</h3>
+        <div class="card-body" style="max-height: 70vh; overflow-y: auto;">
+            <div id="posts">${postsHtml}</div>
+        </div>
+        <div class="card-footer">
             ${postFormHtml}
-        </div>
-    `;
+        </div>`;
 
     // Přidání posluchačů událostí na nově vytvořené prvky
     // Používáme delegaci událostí na panelu, abychom nemuseli přidávat posluchače na každý prvek zvlášť.
@@ -160,10 +146,10 @@ function generateThreadActionsHtml(thread, userRole, currentUserId) {
 
     let html = '';
     if (canClose) {
-        html += `<button data-action="toggle-close" class="btn-small btn-secondary">${thread.is_closed ? '🔓 Otevřít' : '🔒 Uzavřít'} vlákno</button>`;
+        html += `<button data-action="toggle-close" class="btn btn-sm btn-outline-secondary">${thread.is_closed ? '🔓 Otevřít' : '🔒 Uzavřít'}</button>`;
     }
     if (canDeleteThread) {
-        html += `<button data-action="delete-thread" class="btn-small btn-danger">🗑️ Smazat vlákno</button>`;
+        html += `<button data-action="delete-thread" class="btn btn-sm btn-outline-danger">🗑️ Smazat</button>`;
     }
     return html;
 }
@@ -175,15 +161,16 @@ function generateThreadActionsHtml(thread, userRole, currentUserId) {
  */
 function generatePostFormHtml(thread) {
     if (thread.is_closed) {
-        return `<p class="thread-closed-msg">Toto vlákno je uzavřené.</p>`;
+        return `<p class="text-muted text-center fst-italic m-0">Toto vlákno je uzavřené.</p>`;
     }
     return `
-        <form id="postForm" class="form">
-            <textarea id="content" placeholder="Tvůj příspěvek" required></textarea>
-            <div class="form-options">
-                <input type="checkbox" id="is_anonymous"> <label for="is_anonymous">Publikovat anonymně</label>
+        <h6 class="mb-2">Přidat příspěvek</h6>
+        <form id="postForm">
+            <textarea id="content" class="form-control mb-2" placeholder="Tvůj příspěvek" required rows="3"></textarea>
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="is_anonymous"> <label class="form-check-label" for="is_anonymous">Publikovat anonymně</label>
             </div>
-            <button type="submit" class="btn">Odeslat</button>
+            <button type="submit" class="btn btn-primary">Odeslat</button>
         </form>
     `;
 }
@@ -200,33 +187,36 @@ function generatePostHtml(post, userRole, currentUserId, isFirstPost = false) {
     let rolePrefix = '';
     if (!post.is_deleted) {
         if (post.author_role === 'admin') {
-            rolePrefix = '<span class="role-prefix admin">(Admin)</span> ';
+            rolePrefix = '<span class="badge bg-danger me-1">Admin</span> ';
         } else if (post.author_role === 'politician') {
-            rolePrefix = '<span class="role-prefix politician">(Politik)</span> ';
+            rolePrefix = '<span class="badge bg-primary me-1">Politik</span> ';
         }
     }
 
     // Uživatel může smazat příspěvek, pokud je admin, nebo pokud je autorem příspěvku a ten nemá žádné odpovědi.
     const canDelete = !post.is_deleted && (userRole === 'admin' || (post.author_id === currentUserId && post.replies.length === 0));
     
-    // Sestavení tlačítek akcí pro příspěvek s novými ikonami a třídami
+    // Sestavení tlačítek akcí pro příspěvek
     const postActions = /*html*/`
-        <div class="post-actions">
-            ${!post.is_deleted && !isFirstPost ? `<button class="btn-small btn-reply btn-secondary" data-action="show-reply" data-post-id="${post.id}">↪️ Odpovědět</button>` : ''}
-            ${canDelete ? `<button class="btn-small btn-danger" data-action="delete-post" data-post-id="${post.id}">🗑️ Smazat</button>` : ''}
+        <div class="d-flex gap-2">
+            ${!post.is_deleted && !isFirstPost ? `<button class="btn btn-sm btn-outline-secondary" data-action="show-reply" data-post-id="${post.id}">↪️ Odpovědět</button>` : ''}
+            ${canDelete ? `<button class="btn btn-sm btn-outline-danger" data-action="delete-post" data-post-id="${post.id}">🗑️ Smazat</button>` : ''}
         </div>
     `;
 
     const repliesHtml = post.replies.map(reply => generatePostHtml(reply, userRole, currentUserId)).join('');
 
     return `
-        <div class="post ${post.is_deleted ? 'deleted' : ''}" id="post-${post.id}">
-            <div class="post-header">
-                <p class="post-author">${rolePrefix}<strong>${post.author}</strong> <span class="post-date">(${new Date(post.created_at).toLocaleString()})</span></p>
+        <div class="card mb-3 ${post.is_deleted ? 'bg-light' : ''}" id="post-${post.id}">
+            <div class="card-header d-flex justify-content-between align-items-center py-2">
+                <div class="fw-bold small">${rolePrefix}${post.author}</div>
                 ${postActions}
             </div>
-            <p class="post-content">${post.content}</p>
-            <div class="replies">
+            <div class="card-body py-2">
+                <p class="card-text ${post.is_deleted ? 'fst-italic text-muted' : ''}">${post.content}</p>
+            </div>
+            <div class="card-footer text-muted small py-1">${new Date(post.created_at).toLocaleString()}</div>
+            <div class="ps-4 pt-3">
                 ${repliesHtml}
             </div>
         </div>
@@ -244,12 +234,12 @@ function showReplyForm(parentPostId) {
 
     const parentPost = document.getElementById(`post-${parentPostId}`);
     const formHtml = `
-        <form id="replyForm" class="form reply-form" data-parent-id="${parentPostId}">
-            <textarea id="replyContent" placeholder="Vaše odpověď..." required></textarea>
-            <div class="form-options">
-                <input type="checkbox" id="reply_is_anonymous"> <label for="reply_is_anonymous">Publikovat anonymně</label>
+        <form id="replyForm" class="p-3 bg-light-subtle rounded mt-2" data-parent-id="${parentPostId}">
+            <textarea id="replyContent" class="form-control form-control-sm mb-2" placeholder="Vaše odpověď..." required rows="2"></textarea>
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="reply_is_anonymous"> <label class="form-check-label small" for="reply_is_anonymous">Publikovat anonymně</label>
             </div>
-            <button type="submit" class="btn">Odeslat odpověď</button>
+            <button type="submit" class="btn btn-primary btn-sm">Odeslat odpověď</button>
         </form>
     `;
     parentPost.insertAdjacentHTML('beforeend', formHtml);
@@ -294,7 +284,7 @@ document.getElementById("threadForm").addEventListener("submit", async (e) => {
 
     try {
         await apiRequest("/threads", "POST", { title });
-        document.getElementById("title").value = "";
+        e.target.reset();
         await loadThreads(); // Znovu načteme seznam vláken, aby se zobrazilo to nové.
     } catch (err) {
         alert(`Chyba při vytváření vlákna: ${err.message}`);
@@ -353,7 +343,7 @@ async function deleteThread(threadId) {
         // 1. Znovu načteme seznam vláken vlevo.
         await loadThreads();
         // 2. Vyčistíme pravý panel a zobrazíme zástupný text.
-        document.getElementById("thread-content-panel").innerHTML = `<p class="placeholder">Vyberte vlákno ze seznamu.</p>`;
+        document.getElementById("thread-content-panel").innerHTML = `<div class="card-body text-center text-muted p-5">Vyberte vlákno ze seznamu vlevo.</div>`;
         // 3. Resetujeme ID aktuálního vlákna.
         currentThreadId = null;
     } catch (err) {
@@ -371,17 +361,6 @@ async function toggleCloseThread(threadId) {
         alert(`Chyba při změně stavu vlákna: ${err.message}`);
     }
 }
-
-/**
- * Přidá posluchače událostí na hlavičky sekcí (Otevřená/Uzavřená vlákna)
- * pro jejich sbalování a rozbalování.
- */
-document.querySelectorAll('.section-header').forEach(header => {
-    header.addEventListener('click', () => {
-        const section = header.closest('.threads-section');
-        section.classList.toggle('collapsed');
-    });
-});
 
 /**
  * Inicializační funkce, která se spustí po načtení stránky.

@@ -1,23 +1,46 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fórum - Úvod</title>
-    <link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fórum – Úvod</title>
+  <link rel="stylesheet" href="css/bootstrap.css">
 </head>
-<body>
-<div id="navbar-container"></div>
-<div class="container">
-    <h1>Vítej na našem fóru</h1>
-    <p>Diskutuj, sdílej a zapoj se do komunity!</p>
-    <div class="links">
-        <a class="btn" href="login.html">Přihlásit se</a>
-        <a class="btn" href="register.html">Registrovat se</a>
+<body class="bg-light d-flex flex-column min-vh-100">
+
+  <!-- Navigace -->
+  <div id="navbar-container"></div>
+
+  <!-- Hlavní obsah -->
+  <main class="flex-grow-1 d-flex align-items-center">
+    <div class="container text-center py-5">
+      <div class="p-4 p-md-5 bg-white rounded-4 shadow-sm mx-auto" style="max-width: 600px;">
+        <h1 class="display-5 fw-bold mb-3">Vítej na našem fóru</h1>
+        <p class="lead text-muted mb-4">
+          Diskutuj, sdílej a zapoj se do komunity!
+        </p>
+
+        <div class="d-flex flex-column flex-sm-row justify-content-center gap-3">
+          <a href="login.html" class="btn btn-primary btn-lg px-4">
+            Přihlásit se
+          </a>
+          <a href="register.html" class="btn btn-outline-primary btn-lg px-4">
+            Registrovat se
+          </a>
+        </div>
+      </div>
     </div>
-</div>
-<script src="js/api.js"></script>
-<script src="js/navbar.js"></script>
-<script src="js/index.js" defer></script>
+  </main>
+
+  <!-- Paticka -->
+  <footer class="mt-auto text-center py-3 text-muted small bg-white border-top">
+    &copy; 2025 Fórum Komunita
+  </footer>
+
+  <!-- Skripty -->
+  <script src="js/bootstrap.bundle.min.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/navbar.js"></script>
+  <script src="js/index.js" defer></script>
 </body>
 </html>

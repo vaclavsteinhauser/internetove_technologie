@@ -32,14 +32,14 @@ async function loadUsers() {
                 <td>${user.username}</td>
                 <td>
                     <!-- Select box pro změnu role. Aktuální role je předvybrána. -->
-                    <select data-user-id="${user.id}" class="role-select">
+                    <select data-user-id="${user.id}" class="form-select form-select-sm">
                         <option value="user" ${user.role === 'user' ? 'selected' : ''}>Uživatel</option>
                         <option value="politician" ${user.role === 'politician' ? 'selected' : ''}>Politik</option>
                         <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
                     </select>
                 </td>
                 <!-- Tlačítko pro uložení změny role. Volá funkci updateRole s ID uživatele. -->
-                <td><button class="btn-small" onclick="updateRole(${user.id})">Uložit</button></td>
+                <td><button class="btn btn-sm btn-primary" onclick="updateRole(${user.id})">Uložit</button></td>
             `;
             tbody.appendChild(tr);
         });

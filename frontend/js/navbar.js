@@ -30,29 +30,36 @@ function renderNavbar() {
     // Pokud token neexistuje, uživatel je odhlášený.
     if (!token) {
         // Zobrazí se odkazy pro přihlášení a registraci.
-        nav.innerHTML = `
-      <a href="login.html">Přihlášení</a>
-      <a href="register.html">Registrace</a>
-    `;
+        nav.innerHTML = /*html*/`
+            <li class="nav-item">
+                <a class="nav-link" href="login.html">Přihlásit se</a>
+            </li>
+            <li class="nav-item">
+                <a class="btn btn-outline-light" href="register.html">Registrovat se</a>
+            </li>
+        `;
     } else {
         // Pokud token existuje, uživatel je přihlášený.
-        // Zobrazí se odkaz na administraci, pokud má uživatel roli 'admin'.
-        const adminLinks = role === 'admin' 
-            ? `<a href="admin.html">Správa uživatelů</a>
-               <a href="audit_log.html">Audit Log</a>` 
+        const adminLinks = role === 'admin'
+            ? /*html*/`
+                <li><a class="dropdown-item" href="admin.html">Správa uživatelů</a></li>
+                <li><a class="dropdown-item" href="audit_log.html">Audit Log</a></li>
+                <li><hr class="dropdown-divider"></li>
+              `
             : '';
-        // Sestavení HTML pro přihlášeného uživatele.
-        nav.innerHTML = `
-      <div class="user-info">
-        <span class="user-fullname">${fullName || username || "Uživatel"}</span>
-        <span class="user-username">@${username || "uživatel"}</span>
-      </div>
-      <div class="nav-actions">
-        ${adminLinks} <!-- Vloží se odkazy na admin stránky, nebo prázdný řetězec -->
-        <a href="change_password.html">Změna hesla</a>
-        <a href="#" onclick="logout()">Odhlásit</a> <!-- Odkaz spouští funkci pro odhlášení -->
-      </div>
-    `;
+
+        nav.innerHTML = /*html*/`
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarUserDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    ${fullName || username}
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark" aria-labelledby="navbarUserDropdown">
+                    ${adminLinks}
+                    <li><a class="dropdown-item" href="change_password.html">Změna hesla</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="logout()">Odhlásit</a></li>
+                </ul>
+            </li>
+        `;
     }
 }
 

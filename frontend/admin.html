@@ -3,20 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Administrace</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>Administrace - Fórum</title>
+    <link rel="stylesheet" href="css/bootstrap.css">
 </head>
-<body>
-<div id="navbar-container"></div>
-<div class="container">
-    <h1>Správa uživatelů</h1>
-    <table id="users-table">
-        <thead><tr><th>ID</th><th>Celé jméno</th><th>Uživatelské jméno</th><th>Role</th><th>Akce</th></tr></thead>
-        <tbody><!-- Data se načtou sem --></tbody>
-    </table>
-</div>
-<script src="js/api.js"></script>
-<script src="js/navbar.js"></script>
-<script src="js/admin.js" defer></script>
+<body class="bg-light">
+    <div id="navbar-container"></div>
+    <div class="container mt-4">
+        <h1 class="mb-4">Správa uživatelů</h1>
+        <div class="table-responsive">
+            <table id="users-table" class="table table-striped table-bordered table-hover align-middle">
+                <thead class="table-light">
+                    <tr><th>ID</th><th>Celé jméno</th><th>Uživatelské jméno</th><th>Role</th><th>Akce</th></tr>
+                </thead>
+                <tbody><!-- Data se načtou sem --></tbody>
+            </table>
+        </div>
+    </div>
+    <script src="js/bootstrap.bundle.min.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/navbar.js"></script>
+    <script src="js/admin.js" defer></script>
 </body>
 </html>

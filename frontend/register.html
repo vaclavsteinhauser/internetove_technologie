@@ -3,24 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registrace</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>Registrace - Fórum</title>
+    <link rel="stylesheet" href="css/bootstrap.css">
 </head>
-<body>
-<div id="navbar-container"></div>
-<div class="container">
-    <h1>Registrace</h1>
-    <form id="registerForm" class="form">
-        <input id="full_name" type="text" placeholder="Celé jméno" required>
-        <input id="username" type="text" placeholder="Uživatelské jméno" required>
-        <input id="email" type="email" placeholder="E-mail" required>
-        <input id="password" type="password" placeholder="Heslo" required>
-        <button type="submit" class="btn">Registrovat</button>
-    </form>
-    <p>Už máš účet? <a href="login.html">Přihlas se</a></p>
-</div>
-<script src="js/api.js"></script>
-<script src="js/navbar.js"></script>
-<script src="js/register.js" defer></script>
+<body class="bg-light d-flex flex-column min-vh-100">
+    <div id="navbar-container"></div>
+    <main class="flex-grow-1 d-flex align-items-center">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-6 col-lg-5">
+                    <div class="card shadow-sm">
+                        <div class="card-body p-4">
+                            <h1 class="card-title text-center mb-4">Registrace</h1>
+                            <form id="registerForm">
+                                <div class="mb-3"><input id="full_name" type="text" class="form-control" placeholder="Celé jméno" required></div>
+                                <div class="mb-3"><input id="username" type="text" class="form-control" placeholder="Uživatelské jméno" required></div>
+                                <div class="mb-3"><input id="email" type="email" class="form-control" placeholder="E-mail" required></div>
+                                <div class="mb-3"><input id="password" type="password" class="form-control" placeholder="Heslo" required></div>
+                                <div class="d-grid"><button type="submit" class="btn btn-primary">Registrovat</button></div>
+                            </form>
+                            <p class="text-center mt-3">Už máš účet? <a href="login.html">Přihlas se</a></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script src="js/bootstrap.bundle.min.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/navbar.js"></script>
+    <script src="js/register.js" defer></script>
 </body>
 </html>
