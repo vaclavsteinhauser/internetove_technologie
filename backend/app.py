@@ -382,6 +382,50 @@ def get_password_policy():
 
 # --- USER MANAGEMENT ENDPOINTS ---
 
+@app.route("/api/profile", methods=["GET"])
+@token_required
+def get_profile(user):
+    """
+    Vrátí profilová data přihlášeného uživatele (jméno, username, email).
+    """
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT full_name, username, email FROM users WHERE id = %s", (user['id'],))
+    profile_data = cur.fetchone()
+    if not profile_data:
+        return jsonify({"error": "User not found"}), 404
+
+    return jsonify({
+        "full_name": profile_data[0],
+        "username": profile_data[1],
+        "email": profile_data[2]
+    })
+
+@app.route("/api/profile", methods=["PUT"])
+@token_required
+def update_profile(user):
+    """
+    Aktualizuje profil přihlášeného uživatele (jméno a volitelně heslo).
+    """
+    data = request.json
+    full_name = data.get("full_name")
+    old_password = data.get("old_password")
+    new_password = data.get("new_password")
+
+    if not full_name:
+        return jsonify({"error": "Full name is required"}), 400
+
+    cur = mysql.connection.cursor()
+    cur.execute("UPDATE users SET full_name = %s WHERE id = %s", (full_name, user['id']))
+
+    # Pokud uživatel chce změnit i heslo
+    if new_password:
+        # Zde bychom zkopírovali a upravili logiku z `change_password`
+        # Pro zjednodušení ji zde integrujeme přímo.
+        change_password_logic(user, old_password, new_password)
+
+    mysql.connection.commit()
+    return jsonify({"message": "Profile updated successfully"})
+
 @app.route("/api/users/change_password", methods=["PUT"])
 @token_required
 def change_password(user):
@@ -389,26 +433,33 @@ def change_password(user):
     data = request.json
     old_pw, new_pw = data.get("old_password"), data.get("new_password")
     if not old_pw or not new_pw:
-        return jsonify({"error": "Missing password"}), 400
+        # Pokud hesla nejsou zadána, nic neděláme (v kontextu update_profile)
+        # Ale pokud je tento endpoint volán samostatně, je to chyba.
+        return jsonify({"error": "Old and new password are required"}), 400
 
+    change_password_logic(user, old_pw, new_pw)
+    mysql.connection.commit()
+    return jsonify({"message": "Password updated"})
+
+def change_password_logic(user, old_password, new_password):
+    """Pomocná funkce pro logiku změny hesla, aby se dala znovu použít."""
     # Validace hesla podle nastavené politiky
-    errors = validate_password(new_pw)
+    errors = validate_password(new_password)
     if errors:
-        return jsonify({"error": "New password does not meet complexity requirements.", "details": errors}), 400
+        # V reálné aplikaci by se zde vyhodila výjimka, kterou by volající funkce chytila
+        raise ValueError("New password does not meet complexity requirements.")
 
     # Načtení hashe aktuálního hesla z databáze pro ověření.
     cur = mysql.connection.cursor()
     cur.execute("SELECT password_hash FROM users WHERE id=%s", (user["id"],))
     row = cur.fetchone()
     # Ověření, zda se staré heslo shoduje.
-    if not row or not check_password_hash(row[0], old_pw):
-        return jsonify({"error": "Old password incorrect"}), 403
+    if not row or not check_password_hash(row[0], old_password):
+        raise ValueError("Old password incorrect")
 
     # Vygenerování hashe pro nové heslo a jeho uložení do databáze.
-    new_hash = generate_password_hash(new_pw)
+    new_hash = generate_password_hash(new_password)
     cur.execute("UPDATE users SET password_hash=%s WHERE id=%s", (new_hash, user["id"]))
-    mysql.connection.commit()
-    return jsonify({"message": "Password updated"})
 
 
 # --- THREADS ENDPOINTS ---

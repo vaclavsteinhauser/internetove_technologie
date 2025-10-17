@@ -58,14 +58,14 @@ function renderNavbar() {
                     ${fullName || username}
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark" aria-labelledby="navbarUserDropdown">
-                    <li><a class="dropdown-item" href="change_password.html">Změna hesla</a></li>
+                    <li><a class="dropdown-item" href="profile.html">Úprava profilu</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item" href="#" onclick="logout()">Odhlásit</a></li>
                 </ul>
             </li>
             <!-- Odkazy pro mobilní zobrazení -->
             ${adminLinks ? adminLinks.mobile : ''}
-            <li class="nav-item d-lg-none"><a class="nav-link" href="change_password.html">Změna hesla</a></li>
+            <li class="nav-item d-lg-none"><a class="nav-link" href="profile.html">Úprava profilu</a></li>
             <li class="nav-item d-lg-none"><a class="nav-link" href="#" onclick="logout()">Odhlásit (${fullName || username})</a></li>
         `;
     }
