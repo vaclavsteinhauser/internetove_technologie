@@ -3,47 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Úprava profilu - Fórum</title>
+    <title>Můj profil</title>
     <link rel="stylesheet" href="css/bootstrap.css">
 </head>
-<body class="bg-light d-flex flex-column min-vh-100">
+<body class="bg-light">
     <div id="navbar-container"></div>
-    <main class="flex-grow-1 d-flex align-items-center">
-        <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-md-8 col-lg-7">
-                    <div class="card shadow-sm rounded-4">
-                        <div class="card-body p-4 p-md-5">
-                            <h1 class="card-title text-center mb-4">Úprava profilu</h1>
-                            <form id="profileForm">
-                                <!-- Údaje o profilu -->
-                                <h5 class="mb-3">Osobní údaje</h5>
-                                <div class="mb-3">
-                                    <label for="full_name" class="form-label">Celé jméno</label>
-                                    <input id="full_name" type="text" class="form-control" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="username" class="form-label">Uživatelské jméno</label>
-                                    <input id="username" type="text" class="form-control" disabled>
-                                </div>
-                                <div class="mb-4">
-                                    <label for="email" class="form-label">E-mail</label>
-                                    <input id="email" type="email" class="form-control" disabled>
-                                </div>
 
-                                <!-- Změna hesla -->
-                                <h5 class="mb-3">Změna hesla (volitelné)</h5>
-                                <div class="mb-3"><input id="old_password" type="password" class="form-control" placeholder="Staré heslo"></div>
-                                <div class="mb-3"><input id="new_password" type="password" class="form-control" placeholder="Nové heslo"></div>
-                                <div id="password-policy-info" class="form-text text-muted mb-3"></div>
-                                <div class="d-grid"><button id="saveProfileButton" type="submit" class="btn btn-primary" disabled>Uložit změny</button></div>
-                            </form>
-                        </div>
+    <main class="container my-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card rounded-4 shadow-sm">
+                    <div class="card-body p-4 p-md-5">
+
+                        <h1 class="mb-4">Můj profil</h1>
+
+                        <form id="profileForm" novalidate>
+                            <div class="mb-3">
+                                <label for="full_name" class="form-label">Celé jméno</label>
+                                <input type="text" class="form-control" id="full_name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Uživatelské jméno</label>
+                                <input type="text" class="form-control" id="username" disabled readonly>
+                                <div class="form-text">Uživatelské jméno nelze změnit.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="email" class="form-label">E-mail</label>
+                                <input type="email" class="form-control" id="email" disabled readonly>
+                            </div>
+
+                            <hr class="my-4">
+
+                            <h2 class="h4 mb-3">Změna hesla</h2>
+                            <p class="text-muted small">Vyplňte pouze v případě, že si přejete heslo změnit.</p>
+
+                            <div class="mb-3">
+                                <label for="old_password" class="form-label">Staré heslo</label>
+                                <input type="password" class="form-control" id="old_password">
+                            </div>
+                            <div class="mb-3">
+                                <label for="new_password" class="form-label">Nové heslo</label>
+                                <input type="password" class="form-control" id="new_password">
+                            </div>
+
+                            <!-- Kontejner pro zobrazení požadavků na heslo -->
+                            <div id="password-policy-info" class="alert alert-info small p-2"></div>
+
+                            <div class="d-grid gap-2 mt-4">
+                                <button type="submit" id="saveProfileButton" class="btn btn-primary btn-lg" disabled>Uložit změny</button>
+                            </div>
+                        </form>
+
                     </div>
                 </div>
             </div>
         </div>
     </main>
+
     <script src="js/bootstrap.bundle.min.js"></script>
     <script src="js/api.js"></script>
     <script src="js/utils.js"></script>

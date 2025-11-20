@@ -55,7 +55,7 @@ function createThreadElement(thread) {
 
     a.innerHTML = `
         <div class="d-flex w-100 justify-content-between">
-            <h6 class="mb-1">${displayTitle}</h6>
+            <p class="fw-bold mb-1">${displayTitle}</p>
             <small class="text-muted">${new Date(thread.created_at).toLocaleDateString()}</small>
         </div>
         <div class="d-flex w-100 justify-content-between">
@@ -85,9 +85,9 @@ async function loadThreadContent(threadId) {
     // Zvýraznění aktivního vlákna v levém panelu
     // Nejprve odstraníme zvýraznění ze všech, pak přidáme na to správné.
     document.querySelectorAll('.list-group-item').forEach(el => {
-        el.classList.remove('active');
+        el.classList.remove('active', 'bg-primary-subtle', 'text-dark');
         if (el.getAttribute('data-thread-id') == threadId) {
-            el.classList.add('active', 'bg-primary-subtle');
+            el.classList.add('active', 'bg-primary-subtle', 'text-dark');
         }
     });
 
@@ -122,7 +122,7 @@ function renderThreadContent(panel, thread, userRole, currentUserId) {
     // Sestavení finálního HTML a vložení do panelu
     panel.innerHTML = /*html*/`
         <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">${thread.title}</h5>
+            <h2 class="mb-0 h5">${thread.title}</h2>
             <div class="d-flex gap-2">${threadActionsHtml}</div>
         </div>
         <div class="card-body" style="max-height: 70vh; overflow-y: auto;">
@@ -172,7 +172,7 @@ function generatePostFormHtml(thread) {
         return `<p class="text-muted text-center fst-italic m-0">Toto vlákno je uzavřené.</p>`;
     }
     return `
-        <h6 class="mb-2">Přidat příspěvek</h6>
+        <h3 class="mb-2 h6">Přidat příspěvek</h3>
         <form id="postForm">
             <label for="content" class="visually-hidden">Text příspěvku</label>
             <textarea id="content" class="form-control mb-2" placeholder="Tvůj příspěvek" required rows="3"></textarea>
@@ -196,9 +196,9 @@ function generatePostHtml(post, userRole, currentUserId, isFirstPost = false) {
     let rolePrefix = '';
     if (!post.is_deleted) {
         if (post.author_role === 'admin') {
-            rolePrefix = '<span class="badge bg-danger me-1">Admin</span> ';
+            rolePrefix = '<span class="badge bg-danger me-1 fs-6">Admin</span> ';
         } else if (post.author_role === 'politician') {
-            rolePrefix = '<span class="badge bg-primary me-1">Politik</span> ';
+            rolePrefix = '<span class="badge bg-primary me-1 fs-6">Politik</span> ';
         }
     }
 
@@ -223,7 +223,7 @@ function generatePostHtml(post, userRole, currentUserId, isFirstPost = false) {
         <div class="d-flex gap-2">
             ${!post.is_deleted && !isFirstPost ? `<button class="btn btn-sm btn-outline-secondary" data-action="show-reply" data-post-id="${post.id}">↪️ Odpovědět</button>` : ''}
             ${canDelete ? `<button class="btn btn-sm btn-outline-danger" data-action="delete-post" data-post-id="${post.id}">🗑️ Smazat</button>` : ''}
-            ${!post.is_deleted ? `<button class="btn btn-sm ${likeButtonClass}" data-action="like-post" data-post-id="${post.id}">👍 Lajk <span class="badge bg-secondary">${post.likes || 0}</span></button>` : ''}
+            ${!post.is_deleted ? `<button class="btn btn-sm ${likeButtonClass}" data-action="like-post" data-post-id="${post.id}">👍 Lajk <span class="badge bg-secondary fs-6">${post.likes || 0}</span></button>` : ''}
         </div>
     `;
 

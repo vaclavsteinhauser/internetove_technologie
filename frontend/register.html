@@ -16,11 +16,21 @@
                         <div class="card-body p-4">
                             <h1 class="card-title text-center mb-4">Registrace</h1>
                             <form id="registerForm">
-                                <div class="mb-3"><input id="full_name" type="text" class="form-control" placeholder="Celé jméno" required></div>
-                                <div class="mb-3"><input id="username" type="text" class="form-control" placeholder="Uživatelské jméno" required></div>
-                                <div class="mb-3"><input id="email" type="email" class="form-control" placeholder="E-mail" required></div>
-                                <div class="mb-3"><input id="password" type="password" class="form-control" placeholder="Heslo" required></div>
-                                <div class="mb-3"><input id="confirm_password" type="password" class="form-control" placeholder="Potvrďte heslo" required></div>
+                                <div class="mb-3">
+                                    <label for="full_name" class="visually-hidden">Celé jméno</label>
+                                    <input id="full_name" type="text" class="form-control" placeholder="Celé jméno" required></div>
+                                <div class="mb-3">
+                                    <label for="username" class="visually-hidden">Uživatelské jméno</label>
+                                    <input id="username" type="text" class="form-control" placeholder="Uživatelské jméno" required></div>
+                                <div class="mb-3">
+                                    <label for="email" class="visually-hidden">E-mail</label>
+                                    <input id="email" type="email" class="form-control" placeholder="E-mail" required></div>
+                                <div class="mb-3">
+                                    <label for="password" class="visually-hidden">Heslo</label>
+                                    <input id="password" type="password" class="form-control" placeholder="Heslo" required></div>
+                                <div class="mb-3">
+                                    <label for="confirm_password" class="visually-hidden">Potvrďte heslo</label>
+                                    <input id="confirm_password" type="password" class="form-control" placeholder="Potvrďte heslo" required></div>
                                 <div class="progress mb-2" style="height: 5px;">
                                     <div id="password-strength-bar" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
                                 </div>
