@@ -217,10 +217,12 @@ function generatePostHtml(post, userRole, currentUserId, isFirstPost = false) {
 
     const repliesHtml = post.replies.map(reply => generatePostHtml(reply, userRole, currentUserId)).join('');
 
+    
+
     return `
         <div class="card mb-3 ${post.is_deleted ? 'bg-light' : ''}" id="post-${post.id}">
             <div class="card-header d-flex justify-content-between align-items-center py-2">
-                <div class="fw-bold small">${rolePrefix}${post.author}</div>
+                <div class="fw-bold small">${rolePrefix}${post.author_full_name || post.author}</div>
                 ${postActions}
             </div>
             <div class="card-body py-2">

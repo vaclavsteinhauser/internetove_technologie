@@ -539,7 +539,7 @@ def get_thread(thread_id):
     
     # Načtení všech příspěvků patřících k tomuto vláknu.
     cur.execute("""
-        SELECT p.id, u.username, p.content, p.created_at, u.role, p.is_anonymous, p.is_deleted, p.parent_post_id, p.user_id
+        SELECT p.id, u.username, p.content, p.created_at, u.role, p.is_anonymous, p.is_deleted, p.parent_post_id, p.user_id, u.full_name
         FROM posts p
                  JOIN users u ON p.user_id = u.id
         WHERE thread_id = %s ORDER BY p.created_at ASC
@@ -566,7 +566,7 @@ def get_thread(thread_id):
 
         # Uložení zpracovaného příspěvku do slovníku. Klíčem je ID příspěvku.
         all_posts[post_id] = {
-            "id": post_id, "author": author_name, "content": content, 
+            "id": post_id, "author": author_name, "author_full_name": r[9], "content": content,
             "created_at": r[3], "author_role": r[4], "is_deleted": is_deleted,
             "parent_post_id": r[7], "author_id": r[8], "replies": [],
             "likes": post_likes["count"],

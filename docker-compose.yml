@@ -47,6 +47,13 @@ services:
       DB_PASSWORD: ZJNiogxCsNs9flEH 
       DB_NAME: forum 
       SECRET_KEY: c6hnErwqQ7VZuenS # Tajný klíč pro JWT.
+      # --- Konfigurace pro odesílání e-mailů ---
+      # Nahraďte hodnotami pro váš SMTP server (např. Mailtrap, Sendgrid atd.)
+      MAIL_SERVER: "smtp.example.com"
+      MAIL_PORT: 587
+      MAIL_USE_TLS: "true"
+      MAIL_USERNAME: "your-email@example.com"
+      MAIL_PASSWORD: "your-email-password"
     # Mapuje port 5000 na hostiteli na port 5000 v kontejneru, kde běží Flask aplikace.
     ports:
       - "5000:5000"
@@ -60,24 +67,14 @@ services:
     container_name: forum-frontend
     restart: always
     ports:
-      - "8000:80"   # Port pro přesměrování na HTTPS
+      - "8000:80"   # HTTP port pro přístup k aplikaci
     volumes:
       # Mapujeme náš vlastní konfigurační soubor pro Nginx
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      # Mapujeme adresář s SSL certifikáty (musíš si je vygenerovat/získat)
-      # Příklad pro Let's Encrypt
-      - ./nginx/certs:/etc/ssl/certs:ro
       - ./frontend/:/var/www/html:ro
     depends_on:
       - backend
 
-  # Služba pro testování odesílání e-mailů
-  mailhog:
-    image: mailhog/mailhog
-    ports:
-      - "1025:1025" # SMTP port
-      - "8025:8025" # Web UI port
-    restart: unless-stopped
 # Definice pojmenovaného volume pro perzistentní uložení databáze.
 volumes:
   db_data:
