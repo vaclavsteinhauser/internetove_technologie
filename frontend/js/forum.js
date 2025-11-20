@@ -174,6 +174,7 @@ function generatePostFormHtml(thread) {
     return `
         <h6 class="mb-2">Přidat příspěvek</h6>
         <form id="postForm">
+            <label for="content" class="visually-hidden">Text příspěvku</label>
             <textarea id="content" class="form-control mb-2" placeholder="Tvůj příspěvek" required rows="3"></textarea>
             <div class="form-check mb-2">
                 <input class="form-check-input" type="checkbox" id="is_anonymous"> <label class="form-check-label" for="is_anonymous">Publikovat anonymně</label>

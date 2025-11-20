@@ -10,12 +10,18 @@
     <div id="navbar-container"></div>
     <div class="container-fluid mt-3">
         <div class="row g-3">
-            <!-- Levý sloupec se seznamem vláken -->
+            <!-- Varianta B-->
+            <!-- Sloupec s obsahem vlákna -->
+            <!--<div class="col-lg-8">
+                <div class="card rounded-4" id="thread-content-panel"><div class="card-body text-center text-muted p-5">Vyberte vlákno ze seznamu vlevo.</div></div>
+            </div>-->
+            <!-- Sloupec se seznamem vláken -->
             <div class="col-lg-4">
                 <div class="card rounded-4">
                     <div class="card-body">
                         <div class="mb-3">
-                            <input type="search" id="thread-search-input" class="form-control" placeholder="Vyhledat vlákno...">
+                            <label for="thread-search-input" class="visually-hidden">Vyhledat vlákno</label>
+                            <input type="search" id="thread-search-input" class="form-control" placeholder="Vyhledat vlákno">
                         </div>
                         <hr>
                         <div class="accordion" id="threads-accordion">
@@ -35,13 +41,15 @@
                         <hr>
                         <h5 class="mb-3">Vytvořit nové vlákno</h5>
                         <form id="threadForm">
+                            <label for="title" class="visually-hidden">Název nového vlákna</label>
                             <input id="title" type="text" class="form-control mb-2" placeholder="Název vlákna" required>
                             <div class="d-grid"><button type="submit" class="btn btn-primary">Vytvořit</button></div>
                         </form>
                     </div>
                 </div>
             </div>
-            <!-- Pravý sloupec s obsahem vlákna -->
+            <!-- Varianta A-->
+            <!-- Sloupec s obsahem vlákna -->
             <div class="col-lg-8">
                 <div class="card rounded-4" id="thread-content-panel"><div class="card-body text-center text-muted p-5">Vyberte vlákno ze seznamu vlevo.</div></div>
             </div>
