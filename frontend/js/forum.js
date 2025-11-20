@@ -206,7 +206,18 @@ function generatePostHtml(post, userRole, currentUserId, isFirstPost = false) {
     
     const likeButtonClass = post.liked_by_current_user ? 'btn-primary' : 'btn-outline-primary';
 
-    // Sestavení tlačítek akcí pro příspěvek
+    // Sestavení tlačítek akcí pro příspěvek - A/B testování
+    // Varianta A (pouze ikony) prohrála, protože byla pro uživatele méně srozumitelná.
+    /*
+    const postActions = `
+        <div class="d-flex gap-2">
+            ${!post.is_deleted && !isFirstPost ? `<button class="btn btn-sm btn-outline-secondary" data-action="show-reply" data-post-id="${post.id}" title="Odpovědět">↪️</button>` : ''}
+            ${canDelete ? `<button class="btn btn-sm btn-outline-danger" data-action="delete-post" data-post-id="${post.id}" title="Smazat">🗑️</button>` : ''}
+            ${!post.is_deleted ? `<button class="btn btn-sm ${likeButtonClass}" data-action="like-post" data-post-id="${post.id}" title="Lajk">👍 <span class="badge bg-secondary">${post.likes || 0}</span></button>` : ''}
+        </div>
+    `;
+    */
+    // Varianta B (vítězná - ikona s textem)
     const postActions = /*html*/`
         <div class="d-flex gap-2">
             ${!post.is_deleted && !isFirstPost ? `<button class="btn btn-sm btn-outline-secondary" data-action="show-reply" data-post-id="${post.id}">↪️ Odpovědět</button>` : ''}
