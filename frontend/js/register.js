@@ -9,11 +9,17 @@ document.getElementById("registerForm").addEventListener("submit", async (e) => 
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
     const confirm_password = document.getElementById("confirm_password").value;
+    const recaptchaToken = grecaptcha.getResponse();
+
+    if (!recaptchaToken) {
+        alert("Prosím, potvrďte, že nejste robot.");
+        return;
+    }
 
     try {
         // Odeslání požadavku na API pro registraci nového uživatele.
         // Autorizace (auth: false) není potřeba.
-        const response = await apiRequest("/auth/register", "POST", { full_name, username, email, password }, false);
+        const response = await apiRequest("/auth/register", "POST", { full_name, username, email, password, recaptcha_token: recaptchaToken }, false);
         // Po úspěšné registraci se zobrazí upozornění a uživatel je přesměrován na přihlašovací stránku.
         alert(response.message || "Registrace úspěšná, můžeš se přihlásit.");
         window.location.href = "login.html";
@@ -24,6 +30,7 @@ document.getElementById("registerForm").addEventListener("submit", async (e) => 
             errorMessage += "\n\n" + err.details.join("\n");
         }
         alert(errorMessage);
+        grecaptcha.reset();
     }
 });
 

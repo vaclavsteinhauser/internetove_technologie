@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Přihlášení - Fórum</title>
     <link rel="stylesheet" href="css/bootstrap.css">
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body class="bg-light d-flex flex-column min-vh-100">
     <div id="navbar-container"></div>
@@ -22,6 +23,9 @@
                                 <div class="mb-3">
                                     <label for="password" class="visually-hidden">Heslo</label>
                                     <input id="password" type="password" class="form-control" placeholder="Heslo" required></div>
+                                <div class="mb-3 d-flex justify-content-center">
+                                    <div class="g-recaptcha" data-sitekey="6LcL9aksAAAAAGw-Y01KsXujdS5o7_EcdI3jAa4O"></div>
+                                </div>
                                 <div class="d-grid"><button type="submit" class="btn btn-primary">Přihlásit</button></div>
                             </form>
                             <div class="text-center mt-3">

@@ -5,11 +5,17 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
     // Načtení hodnot z formulářových polí.
     const username = document.getElementById("username").value;
     const password = document.getElementById("password").value;
+    const recaptchaToken = grecaptcha.getResponse();
+
+    if (!recaptchaToken) {
+        alert("Prosím, potvrďte, že nejste robot.");
+        return;
+    }
 
     try {
         // Odeslání požadavku na API pro přihlášení.
         // Posílá se uživatelské jméno a heslo, autorizace (auth: false) není potřeba.
-        const data = await apiRequest("/auth/login", "POST", { username, password }, false);
+        const data = await apiRequest("/auth/login", "POST", { username, password, recaptcha_token: recaptchaToken }, false);
         
         // Po úspěšném přihlášení se do localStorage uloží potřebné informace:
         // - JWT token pro autorizaci dalších požadavků.
@@ -25,5 +31,6 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
     } catch (err) {
         // V případě chyby (špatné jméno/heslo) se zobrazí chybová hláška.
         alert(`Chyba přihlášení: ${err.message}`);
+        grecaptcha.reset();
     }
 });

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registrace - Fórum</title>
     <link rel="stylesheet" href="css/bootstrap.css">
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body class="bg-light d-flex flex-column min-vh-100">
     <div id="navbar-container"></div>
@@ -37,6 +38,9 @@
                                 <div id="password-strength-text" class="form-text text-muted small mb-3"></div>
                                 <div id="password-match-error" class="form-text text-danger mb-3" style="display: none;">Hesla se neshodují.</div>
                                 <div id="password-policy-info" class="form-text text-muted mb-3"></div>
+                                <div class="mb-3 d-flex justify-content-center">
+                                    <div class="g-recaptcha" data-sitekey="6LcL9aksAAAAAGw-Y01KsXujdS5o7_EcdI3jAa4O"></div>
+                                </div>
                                 <div class="d-grid"><button id="registerButton" type="submit" class="btn btn-primary" disabled>Registrovat</button></div>
                             </form>
                             <p class="text-center mt-3">Už máš účet? <a href="login.html">Přihlas se</a></p>

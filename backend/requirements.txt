@@ -4,3 +4,4 @@ pyjwt
 werkzeug
 Flask-Cors
 Flask-Mail
+requests

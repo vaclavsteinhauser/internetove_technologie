@@ -5,6 +5,7 @@ from flask_mail import Mail, Message
 from werkzeug.security import generate_password_hash, check_password_hash
 import jwt, datetime, os
 from flask_cors import CORS
+import requests
 
 # Inicializace Flask aplikace
 app = Flask(__name__)
@@ -21,6 +22,7 @@ app.config['MYSQL_PASSWORD'] = os.getenv("DB_PASSWORD", "forumpass")
 app.config['MYSQL_DB'] = os.getenv("DB_NAME", "forum")
 # SECRET_KEY je klíčový pro podepisování JWT tokenů. Měl by být v produkci velmi bezpečný a tajný.
 app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "c6hnErwqQ7VZuenS") 
+app.config['RECAPTCHA_SECRET_KEY'] = os.getenv("RECAPTCHA_SECRET_KEY", "6LcL9aksAAAAAMA0dmLhK1pG_ZWJ_ukoThacrybx") # Test secret key od Googlu
 
 # --- Konfigurace pro odesílání e-mailů (Flask-Mail) ---
 # Konfigurace pro lokální vývoj s MailHogem.
@@ -73,9 +75,21 @@ def register():
     username = data.get("username")
     email = data.get("email")
     password = data.get("password")
+    recaptcha_token = data.get("recaptcha_token")
 
-    if not username or not password or not email:
-        return jsonify({"error": "Missing username, email or password"}), 400
+    if not username or not password or not email or not recaptcha_token:
+        return jsonify({"error": "Missing required fields (username, email, password, or recaptcha)"}), 400
+
+    # Ověření reCAPTCHA
+    recaptcha_verify = requests.post(
+        "https://www.google.com/recaptcha/api/siteverify",
+        data={
+            "secret": app.config['RECAPTCHA_SECRET_KEY'],
+            "response": recaptcha_token
+        }
+    )
+    if not recaptcha_verify.json().get("success"):
+        return jsonify({"error": "Invalid reCAPTCHA."}), 400
 
     # Validace hesla podle nastavené politiky
     errors = validate_password(password)
@@ -112,6 +126,21 @@ def register():
 def login():
     data = request.json
     username, password = data.get("username"), data.get("password")
+    recaptcha_token = data.get("recaptcha_token")
+
+    if not username or not password or not recaptcha_token:
+        return jsonify({"error": "Missing credentials or reCAPTCHA"}), 400
+
+    # Ověření reCAPTCHA
+    recaptcha_verify = requests.post(
+        "https://www.google.com/recaptcha/api/siteverify",
+        data={
+            "secret": app.config['RECAPTCHA_SECRET_KEY'],
+            "response": recaptcha_token
+        }
+    )
+    if not recaptcha_verify.json().get("success"):
+        return jsonify({"error": "Invalid reCAPTCHA."}), 400
 
     # Načtení uživatele z databáze podle uživatelského jména.
     cur = mysql.connection.cursor()
