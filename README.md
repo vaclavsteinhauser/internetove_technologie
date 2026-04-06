@@ -49,7 +49,7 @@
 
 ### 1.1. Úvod
 
-Tato semestrální práce byla vypracována skupinou **[DOPLNIT ČÍSLO SKUPINY]** v rámci předmětu zaměřeného na internetové technologie. Aplikace představuje komplexní řešení pro komunikaci samosprávy a občanů. Je navržena s důrazem na moderní webové standardy a bezpečné rozdělení na oddělený frontend a backend prostřednictvím REST API.
+Tato semestrální práce byla vypracována skupinou 4 v rámci předmětů zaměřených na internetové technologie. Aplikace představuje komplexní řešení pro komunikaci samosprávy a občanů. Je navržena s důrazem na moderní webové standardy a bezpečné rozdělení na oddělený frontend a backend prostřednictvím REST API.
 
 ### 1.2. Idea a cíle
 
